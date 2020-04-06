@@ -1,6 +1,6 @@
 //test github
 #include <ncurses.h>
-
+#include <string.h>
 #define BOX_WIDTH   70
 int main()
 {
@@ -33,11 +33,34 @@ int main()
   refresh();
 
   //Should color change when new message received?
-
-  box(subwindow,0,0);
-  mvwprintw(subwindow, 1, 1, "subwindow");
+  printw("New Message\n");
   refresh();
+  box(subwindow,0,0);
+  char str[80];
+  //mvwprintw(subwindow, 1, 1, "subwindow");
   wrefresh(subwindow);
+
+  for(;;)
+  {
+    mvwgetnstr(subwindow, 1, 1, str, 80);
+    printw("%s\n", str);
+    char* clearString;
+    int length = strlen(str);
+    for(int i = 0; i <= length; i++)
+    {
+      clearString[i] = 32;
+      clearString[i+1] = 0;
+    }
+    if(!strcmp(str, ">>bye<<"))
+    {
+      break;
+    }
+
+    mvwprintw(subwindow, 1, 1, clearString);
+    wrefresh(subwindow);
+    refresh();
+  }
+
 
   getch();
   delwin(subwindow);
