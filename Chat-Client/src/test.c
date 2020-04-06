@@ -1,13 +1,94 @@
 //test github
 #include <ncurses.h>
 #include <string.h>
+
+#define INPUT_MAX   81
 #define BOX_WIDTH   70
+
+
+void rectangle(int y1, int x1, int y2, int x2)
+{
+    mvhline(y1, x1, 0, x2-x1);
+    mvhline(y2, x1, 0, x2-x1);
+    mvvline(y1, x1, 0, y2-y1);
+    mvvline(y1, x2, 0, y2-y1);
+    mvaddch(y1, x1, ACS_ULCORNER);
+    mvaddch(y2, x1, ACS_LLCORNER);
+    mvaddch(y1, x2, ACS_URCORNER);
+    mvaddch(y2, x2, ACS_LRCORNER);
+}
+void blankWin(WINDOW *win)
+{
+  int i;
+  int maxrow, maxcol;
+
+  getmaxyx(win, maxrow, maxcol);
+  for (i = 1; i < maxcol-2; i++)
+  {
+    wmove(win, i, 1);
+    refresh();
+    wclrtoeol(win);
+    wrefresh(win);
+  }
+  //box(win, 0, 0);             /* draw the box again */
+  wrefresh(win);
+}
+void input_win(WINDOW *win, char *word)
+{
+  int i, ch;
+  int maxrow, maxcol, row = 1, col = 0;
+
+  blankWin(win);                          /* make it a clean window */
+  getmaxyx(win, maxrow, maxcol);          /* get window size */
+  bzero(word, INPUT_MAX);
+  wmove(win, 1, 1);                       /* position cusor at top */
+  //mvwgetnstr(win, 1, 1, word, 80);
+  for (i = 0; (ch = wgetch(win)) != '\n'; i++)
+  {
+    if(ch >= 32 && ch < 127)
+    {
+
+      if(strlen(word) < (INPUT_MAX - 1))
+      {
+        word[i] = ch;                       /* '\n' not copied */
+        if (col++ < maxcol-2)               /* if within window */
+        {
+          wprintw(win, "%c", word[i]);      /* display the char recv'd */
+        }
+        else                                /* last char pos reached */
+        {
+          col = 1;
+          if (row == maxrow-2)              /* last line in the window */
+          {
+            scroll(win);                    /* go up one line */
+            row = maxrow-2;                 /* stay at the last line */
+            wmove(win, row, col);           /* move cursor to the beginning */
+            wclrtoeol(win);                 /* clear from cursor to eol */
+            box(win, 0, 0);                 /* draw the box again */
+          }
+          else
+          {
+            row++;
+            wmove(win, row, col);           /* move cursor to the beginning */
+            wrefresh(win);
+            wprintw(win, "%c", word[i]);    /* display the char recv'd */
+          }
+        }
+      }
+    }
+  }
+}
 int main()
 {
 
   int x,y;
   WINDOW *sub;
   initscr();
+  cbreak();
+  refresh();
+  noecho();
+
+
   getmaxyx(stdscr,y,x);
 
   start_color();
@@ -27,38 +108,31 @@ int main()
   init_color(COLOR_WHITE,933,933, 933);
 
   //position subwindow based on x and y of parent window
-  WINDOW* subwindow = newwin(10,x,(y-10),0);
+  rectangle(y-11,0,y-1 ,x-1);
+  WINDOW* subwindow = newwin(9,x-2,(y-10),1);
+  scrollok(subwindow,TRUE);
   wbkgd(subwindow, COLOR_PAIR(2));
 
   refresh();
 
   //Should color change when new message received?
-  printw("New Message\n");
   refresh();
-  box(subwindow,0,0);
-  char str[80];
+  char str[INPUT_MAX];
   //mvwprintw(subwindow, 1, 1, "subwindow");
   wrefresh(subwindow);
 
   for(;;)
   {
-    mvwgetnstr(subwindow, 1, 1, str, 80);
+    input_win(subwindow, str);
     printw("%s\n", str);
-    char* clearString;
-    int length = strlen(str);
-    for(int i = 0; i <= length; i++)
-    {
-      clearString[i] = 32;
-      clearString[i+1] = 0;
-    }
+    bkgd(COLOR_PAIR(1));
+    refresh();
+
     if(!strcmp(str, ">>bye<<"))
     {
       break;
     }
 
-    mvwprintw(subwindow, 1, 1, clearString);
-    wrefresh(subwindow);
-    refresh();
   }
 
 
