@@ -5,8 +5,8 @@
 #==============================================
 
 # FINAL BINARY Target
-./bin/chat-client : ./obj/chat-client.o ./obj/ui.o
-	cc ./obj/chat-client.o ./obj/ui.o -lncurses -o  ./bin/chat-client
+./bin/chat-client : ./obj/chat-client.o ./obj/ui.o ./obj/client-socket.o
+	cc ./obj/chat-client.o ./obj/ui.o ./obj/client-socket.o -lncurses -o  ./bin/chat-client
 #
 # =======================================================
 #                     Dependencies
@@ -17,6 +17,9 @@
 
 ./obj/ui.o : ./src/ui.c  ./inc/chat-client.h
 	cc -c ./src/ui.c -o  ./obj/ui.o
+
+./obj/client-socket.o : ./src/client-socket.c ./inc/chat-client.h
+	cc -c ./src/client-socket.c -o ./obj/client-socket.o
 
 
 #
