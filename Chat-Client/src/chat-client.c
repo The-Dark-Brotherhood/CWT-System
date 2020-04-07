@@ -5,8 +5,6 @@
 int main()
 {
 
-
-
   //WINDOW* subwindow;
   initscr();
   cbreak();
@@ -14,17 +12,15 @@ int main()
   refresh();
   int x,y;
   getmaxyx(stdscr,y,x);
-  WINDOW *subBackground;
-  subBackground = newwin(10,x,(y-10),0);
-  WINDOW* subwindow = newwin(7,x-2,(y-8),1);
-  setUpWindows(subwindow, subBackground);
-
+  WINDOW *messagesWindow = newwin(y*.8-2,x,0, 0);
+  WINDOW *subBackground = newwin(y/5+3,x,(y-(y/5+3)),0);
+  WINDOW *subwindow = newwin(y/5,x-2,(y-(y/5+1)),1);
+  setUpWindows(subwindow, subBackground, messagesWindow);
 
   //Should color change when new message received?
-  printw("New Message\n");
-  refresh();
 
-  //box(subwindow,0,0);
+  //int
+
   char str[INPUT_MAX] = "";
   char input[INPUT_MAX] = "";
 
@@ -45,7 +41,8 @@ int main()
         break;
       }
       strcat(input, str);
-      printw("%s\n", input);
+      mvwprintw(messagesWindow, 1,1, input, 80);
+      wrefresh(messagesWindow);
       input[0] = 0;
 
     }
@@ -54,7 +51,8 @@ int main()
       strcat(input, str);
       blankWin(subBackground);
       blankWin(subwindow);
-      resizeWindows(subwindow, subBackground);
+      blankWin(messagesWindow);
+      resizeWindows(subwindow, subBackground, messagesWindow);
       //wcursyncup(subwindow);
     }
 

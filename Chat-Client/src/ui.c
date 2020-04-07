@@ -20,7 +20,7 @@ void blankWin(WINDOW *win)
   wrefresh(win);
 }
 
-void setUpWindows(WINDOW *subwindow, WINDOW *subBackground)
+void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWindow)
 {
   int x,y;
   getmaxyx(stdscr,y,x);
@@ -30,8 +30,9 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground)
   init_pair(1,COLOR_WHITE,COLOR_BLACK);
   //Colors for subwindow->textbox
   init_pair(2,COLOR_GREEN,COLOR_BLUE);
+  init_pair(3,COLOR_WHITE,COLOR_GREEN);
 
-  bkgd(COLOR_PAIR(1));
+  bkgd(COLOR_PAIR(3));
   refresh();
 
   //Color palette from: https://colorhunt.co/palette/2763
@@ -41,6 +42,9 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground)
   init_color(COLOR_GREEN,0,678, 709);
   init_color(COLOR_WHITE,933,933, 933);
 
+  wbkgd(messagesWindow, COLOR_PAIR(3));
+  mvwprintw(messagesWindow, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
+  wrefresh(messagesWindow);
 
   wbkgd(subBackground, COLOR_PAIR(2));
   box(subBackground, 0, 0);
@@ -53,23 +57,29 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground)
   refresh();
 }
 
-void resizeWindows(WINDOW *win, WINDOW *winBg)
+void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow)
 {
   int x,y;
   getmaxyx(stdscr,y,x);
 
   //check for resize failure
-  wresize(winBg, 10, x);
-  wresize(win,7, x-2);
+  wresize(msgWindow, y-(y/5+3), x);
+  wresize(winBg, (y/5+3), x);
+  wresize(win,y/5, x-2);
 
-  mvwin(win,(y-8),1 );
-  mvwin(winBg,(y-10),0 );
+  mvwin(msgWindow, 0, 0);
+  mvwin(win,(y-(y/5+1)),1 );
+  mvwin(winBg,(y-(y/5+3)),0 );
+
+  wbkgd(msgWindow, COLOR_PAIR(3));
+  mvwprintw(msgWindow, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
 
   wbkgd(winBg, COLOR_PAIR(2));
   wbkgd(win, COLOR_PAIR(2));
   box(winBg, 0, 0);
   mvwprintw(winBg, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
   wrefresh(winBg);
+  wrefresh(msgWindow);
   wrefresh(win);
   refresh();
 
