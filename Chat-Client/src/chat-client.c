@@ -1,7 +1,6 @@
-//test github
 #include "../inc/chat-client.h"
 
-
+//Recommended to take in arguments for user and server
 
 int main()
 {
@@ -11,7 +10,6 @@ int main()
   initscr();
   cbreak();
   refresh();
-  noecho();
 
 
   getmaxyx(stdscr,y,x);
@@ -32,9 +30,14 @@ int main()
   init_color(COLOR_GREEN,0,678, 709);
   init_color(COLOR_WHITE,933,933, 933);
 
+  WINDOW* subBackground = newwin(10,x,(y-10),0);
+  wbkgd(subBackground, COLOR_PAIR(2));
+  box(subBackground, 0, 0);
+  mvwprintw(subBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
+  wrefresh(subBackground);
+
   //position subwindow based on x and y of parent window
-  WINDOW* subwindow = newwin(10,x,(y-10),0);
-  scrollok(subwindow,TRUE);
+  WINDOW* subwindow = newwin(7,x-2,(y-8),1);
   wbkgd(subwindow, COLOR_PAIR(2));
   keypad(subwindow, 1);
   refresh();
@@ -42,22 +45,47 @@ int main()
   //Should color change when new message received?
   printw("New Message\n");
   refresh();
-  box(subwindow,0,0);
+  //box(subwindow,0,0);
   char str[INPUT_MAX];
 
   wrefresh(subwindow);
-
+  char clearString [81] = "";
+  for(int i = 0; i <= 80; i++)
+  {
+    clearString[i] = 32;
+  }
   for(;;)
   {
-    input_win(subwindow, str);
-    printw("%s\n", str);
-    bkgd(COLOR_PAIR(1));
-    refresh();
-
-    if(!strcmp(str, ">>bye<<"))
+    blankWin(subwindow);
+    int ret = 0;
+    ret = mvwgetnstr(subwindow, 0, 0, str, 80);
+    if(ret == OK)
     {
-      break;
+
+
+      mvwprintw(subwindow, 0, 0, clearString);
+      wrefresh(subwindow);
+      refresh();
+      if(!strcmp(str, ">>bye<<"))
+      {
+        break;
+      }
     }
+    else if(ret == KEY_RESIZE)
+    {
+      blankWin(subBackground);
+      blankWin(subwindow);
+      resizeWindows(subwindow, subBackground);
+      wcursyncup(subwindow);
+
+
+    }
+
+
+    //printw("%s\n", str);
+    // bkgd(COLOR_PAIR(1));
+    // wbkgd(subwindow, COLOR_PAIR(2));
+
 
   }
 

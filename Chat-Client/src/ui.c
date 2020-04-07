@@ -13,91 +13,46 @@ void blankWin(WINDOW *win)
     wclrtoeol(win);
     wrefresh(win);
   }
-  box(win, 0, 0);             /* draw the box again */
+  //box(win, 0, 0);             /* draw the box again */
   wrefresh(win);
 }
-void input_win(WINDOW *win, char *word)
+void setUpWindows(WINDOW *win, WINDOW *winBg)
 {
-  int i, ch;
-  int maxrow, maxcol, row = 1, col = 0;
-  int y, x;
-  blankWin(win);                          /* make it a clean window */
-  getmaxyx(win, maxrow, maxcol);          /* get window size */
-  bzero(word, INPUT_MAX);
-  wmove(win, 1, 1);                       /* position cusor at top */
-  for (i = 0; (ch = wgetch(win)) != '\n'; i++)
-  {
-    switch(ch)
-    {
-      case KEY_UP:
-      break;
-      case KEY_DOWN:
-      break;
-      case KEY_LEFT:
-      break;
-      case KEY_RIGHT:
-      break;
-      default:
-      if(ch == KEY_BACKSPACE || ch == KEY_DC || ch == 127)
-      {
-        getyx(win, y, x);
-        if(x == 1 && y > 1)
-        {
-          wmove(win, y-1, maxcol-2);
-          wprintw(win, " ");
-          wmove(win, y-1, maxcol-2);
+  int x,y;
+  getmaxyx(stdscr,y,x);
+  winBg = newwin(10,x,(y-10),0);
+  wbkgd(winBg, COLOR_PAIR(2));
+  box(winBg, 0, 0);
+  mvwprintw(winBg, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
+  wrefresh(winBg);
 
-        }
-        else if(x != 1)
-        {
-          wmove(win, y, x-1);
-          wprintw(win, " ");
-          wmove(win, y, x-1);
-        }
-        if(i != 0)
-        {
-          i--;
-          word[i] = 0;
-          i--;
-          wrefresh(win);
-        }
+  win = newwin(7,x-2,(y-8),1);
+  wbkgd(win, COLOR_PAIR(2));
+  keypad(win, 1);
+  refresh();
+}
+
+void resizeWindows(WINDOW *win, WINDOW *winBg)
+{
+  int x,y;
+  getmaxyx(stdscr,y,x);
+
+  //check for resize failure
+  wresize(winBg, 10, x);
+  wresize(win,7, x-2);
+
+  mvwin(win,(y-8),1 );
+  mvwin(winBg,(y-10),0 );
+
+  wbkgd(winBg, COLOR_PAIR(2));
+  wbkgd(win, COLOR_PAIR(2));
+  box(winBg, 0, 0);
+  mvwprintw(winBg, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
+  wrefresh(winBg);
+  wrefresh(win);
+  //wredrawln(stdscr, 0, y);
+  refresh();
 
 
-      }
-      if(ch >= 32 && ch < 127)
-      {
 
-        if(strlen(word) < (INPUT_MAX - 1))
-        {
-          word[i] = ch;                       /* '\n' not copied */
-          if (col++ < maxcol-2)               /* if within window */
-          {
-            wprintw(win, "%c", word[i]);      /* display the char recv'd */
-
-          }
-          else                                /* last char pos reached */
-          {
-            col = 1;
-            if (row == maxrow-2)              /* last line in the window */
-            {
-              scroll(win);                    /* go up one line */
-              row = maxrow-2;                 /* stay at the last line */
-              wmove(win, row, col);           /* move cursor to the beginning */
-              wclrtoeol(win);                 /* clear from cursor to eol */
-              box(win, 0, 0);                 /* draw the box again */
-            }
-            else
-            {
-              row++;
-              wmove(win, row, col);           /* move cursor to the beginning */
-              wrefresh(win);
-              wprintw(win, "%c", word[i]);    /* display the char recv'd */
-            }
-          }
-        }
-      }
-
-    }
-    usleep(50000);
-  }
 }
