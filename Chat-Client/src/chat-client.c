@@ -5,84 +5,60 @@
 int main()
 {
 
-  int x,y;
-  WINDOW *sub;
+
+
+  //WINDOW* subwindow;
   initscr();
   cbreak();
+  //signal (SIGWINCH, NULL);
   refresh();
-
-
+  int x,y;
   getmaxyx(stdscr,y,x);
-
-  start_color();
-  //Colors for main window
-  init_pair(1,COLOR_WHITE,COLOR_BLACK);
-  //Colors for subwindow->textbox
-  init_pair(2,COLOR_GREEN,COLOR_BLUE);
-
-  bkgd(COLOR_PAIR(1));
-  refresh();
-
-  //Color palette from: https://colorhunt.co/palette/2763
-  init_color(COLOR_RED, 57,62,70);
-  init_color(COLOR_BLACK, 133,157,192);
-  init_color(COLOR_BLUE, 224, 243, 270);
-  init_color(COLOR_GREEN,0,678, 709);
-  init_color(COLOR_WHITE,933,933, 933);
-
-  WINDOW* subBackground = newwin(10,x,(y-10),0);
-  wbkgd(subBackground, COLOR_PAIR(2));
-  box(subBackground, 0, 0);
-  mvwprintw(subBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
-  wrefresh(subBackground);
-
-  //position subwindow based on x and y of parent window
+  WINDOW *subBackground;
+  subBackground = newwin(10,x,(y-10),0);
   WINDOW* subwindow = newwin(7,x-2,(y-8),1);
-  wbkgd(subwindow, COLOR_PAIR(2));
-  keypad(subwindow, 1);
-  refresh();
+  setUpWindows(subwindow, subBackground);
+
 
   //Should color change when new message received?
   printw("New Message\n");
   refresh();
+
   //box(subwindow,0,0);
-  char str[INPUT_MAX];
+  char str[INPUT_MAX] = "";
+  char input[INPUT_MAX] = "";
 
   wrefresh(subwindow);
-  char clearString [81] = "";
-  for(int i = 0; i <= 80; i++)
-  {
-    clearString[i] = 32;
-  }
   for(;;)
   {
     blankWin(subwindow);
     int ret = 0;
-    ret = mvwgetnstr(subwindow, 0, 0, str, 80);
+    mvwprintw(subwindow, 0,0, input, 80);
+    placeCursor(&x, &y, subwindow, (int)strlen(input));
+
+    ret = mvwgetnstr(subwindow, y, x, str, 80-strlen(input));
     if(ret == OK)
     {
-
-
-      mvwprintw(subwindow, 0, 0, clearString);
-      wrefresh(subwindow);
-      refresh();
+      blankWin(subwindow);
       if(!strcmp(str, ">>bye<<"))
       {
         break;
       }
+      strcat(input, str);
+      printw("%s\n", input);
+      input[0] = 0;
+
     }
     else if(ret == KEY_RESIZE)
     {
+      strcat(input, str);
       blankWin(subBackground);
       blankWin(subwindow);
       resizeWindows(subwindow, subBackground);
-      wcursyncup(subwindow);
-
-
+      //wcursyncup(subwindow);
     }
 
 
-    //printw("%s\n", str);
     // bkgd(COLOR_PAIR(1));
     // wbkgd(subwindow, COLOR_PAIR(2));
 
