@@ -20,7 +20,7 @@ void blankWin(WINDOW *win)
   wrefresh(win);
 }
 
-void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWindow)
+void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWindow, WINDOW *messagesWindowBackground)
 {
   int x,y;
   getmaxyx(stdscr,y,x);
@@ -42,12 +42,18 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWind
   init_color(COLOR_GREEN,0,678, 709);
   init_color(COLOR_WHITE,933,933, 933);
 
+  wbkgd(messagesWindowBackground, COLOR_PAIR(3));
+  mvwprintw(messagesWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
+  wrefresh(messagesWindowBackground);
+
   wbkgd(messagesWindow, COLOR_PAIR(3));
-  mvwprintw(messagesWindow, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
   wrefresh(messagesWindow);
 
   wbkgd(subBackground, COLOR_PAIR(2));
   box(subBackground, 0, 0);
+  box(messagesWindowBackground, 0, 0);
+  wrefresh(messagesWindowBackground);
+
   mvwprintw(subBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
   wrefresh(subBackground);
 
@@ -57,30 +63,38 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWind
   refresh();
 }
 
-void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow)
+void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWindowBackground)
 {
+  blankWin(win);
+  blankWin(winBg);
+  blankWin(msgWindowBackground);
   int x,y;
   getmaxyx(stdscr,y,x);
 
   //check for resize failure
-  wresize(msgWindow, y-(y/5+3), x);
+  wresize(msgWindowBackground, y-(y/5+3), x);
+  wresize(msgWindow, 11, x-2);
   wresize(winBg, (y/5+3), x);
   wresize(win,y/5, x-2);
 
   mvwin(msgWindow, 0, 0);
+  mvwin(msgWindow, 2, 1);
   mvwin(win,(y-(y/5+1)),1 );
   mvwin(winBg,(y-(y/5+3)),0 );
 
   wbkgd(msgWindow, COLOR_PAIR(3));
-  mvwprintw(msgWindow, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
+  mvwprintw(msgWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
 
   wbkgd(winBg, COLOR_PAIR(2));
   wbkgd(win, COLOR_PAIR(2));
+  box(msgWindowBackground, 0, 0);
   box(winBg, 0, 0);
   mvwprintw(winBg, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
+    redrawwin(msgWindow);
   wrefresh(winBg);
   wrefresh(msgWindow);
   wrefresh(win);
+  wrefresh(msgWindowBackground);
   refresh();
 
 }

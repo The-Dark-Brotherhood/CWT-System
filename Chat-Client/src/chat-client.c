@@ -5,21 +5,23 @@
 int main()
 {
 
-  //WINDOW* subwindow;
   initscr();
   cbreak();
   //signal (SIGWINCH, NULL);
   refresh();
   int x,y;
   getmaxyx(stdscr,y,x);
-  WINDOW *messagesWindow = newwin(y*.8-2,x,0, 0);
+  WINDOW *messagesWindowBackground = newwin(y-(y/5+3), x, 0, 0);
+  WINDOW *messagesWindow = newwin(11, x-2, 2, 1);
+  scrollok(messagesWindow, TRUE);
   WINDOW *subBackground = newwin(y/5+3,x,(y-(y/5+3)),0);
   WINDOW *subwindow = newwin(y/5,x-2,(y-(y/5+1)),1);
-  setUpWindows(subwindow, subBackground, messagesWindow);
+
+  setUpWindows(subwindow, subBackground, messagesWindow, messagesWindowBackground);
 
   //Should color change when new message received?
 
-  //int
+  int numMessages = 0;
 
   char str[INPUT_MAX] = "";
   char input[INPUT_MAX] = "";
@@ -41,7 +43,8 @@ int main()
         break;
       }
       strcat(input, str);
-      mvwprintw(messagesWindow, 1,1, input, 80);
+      waddstr(messagesWindow, input);
+      waddstr(messagesWindow, "\n");
       wrefresh(messagesWindow);
       input[0] = 0;
 
@@ -49,10 +52,8 @@ int main()
     else if(ret == KEY_RESIZE)
     {
       strcat(input, str);
-      blankWin(subBackground);
-      blankWin(subwindow);
-      blankWin(messagesWindow);
-      resizeWindows(subwindow, subBackground, messagesWindow);
+
+      resizeWindows(subwindow, subBackground, messagesWindow, messagesWindowBackground);
       //wcursyncup(subwindow);
     }
 
