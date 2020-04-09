@@ -4,6 +4,7 @@
 //To do, two threads. one for sending one for receiving
 //splitting a message into two if over 40 characters
 
+
 int main(int argc, char *argv[])
 {
   int                my_server_socket, len, done;
@@ -13,8 +14,6 @@ int main(int argc, char *argv[])
 
   char clientIP[IP_SIZE] = "";
   getClientIP(clientIP);
-
-
 
 
   //   if (argc != 3)
@@ -85,6 +84,7 @@ int main(int argc, char *argv[])
     placeCursor(&x, &y, subwindow, (int)strlen(input));
 
     ret = mvwgetnstr(subwindow, y, x, str, 80-strlen(input));
+
     if(ret == OK)
     {
       blankWin(subwindow);
@@ -94,9 +94,16 @@ int main(int argc, char *argv[])
       }
       strcat(input, str);
       char outgoingMsg[MESSAGE_SIZE] = "";
-      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, argv[1], input, time);
+      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, argv[1], input, time);
       waddstr(messagesWindow, outgoingMsg);
       wrefresh(messagesWindow);
+
+      pthread_t tid;
+       if( pthread_create(&tid, NULL, sendMessage, (void *)outgoingMsg) < 0)
+      {
+          perror("could not create thread");
+          return 1;
+      }
       input[0] = 0;
 
 

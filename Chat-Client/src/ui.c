@@ -26,41 +26,43 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWind
   getmaxyx(stdscr,y,x);
 
   start_color();
-  //Colors for main window
+  //Set up the colors to use with ncurses
   init_pair(1,COLOR_WHITE,COLOR_BLACK);
-  //Colors for subwindow->textbox
   init_pair(2,COLOR_GREEN,COLOR_BLUE);
   init_pair(3,COLOR_WHITE,COLOR_GREEN);
 
-  bkgd(COLOR_PAIR(3));
-  refresh();
-
-  //Color palette from: https://colorhunt.co/palette/2763
+  //Adjust the color rgb values to create custom colors
   init_color(COLOR_RED, 57,62,70);
   init_color(COLOR_BLACK, 133,157,192);
   init_color(COLOR_BLUE, 224, 243, 270);
   init_color(COLOR_GREEN,0,678, 709);
   init_color(COLOR_WHITE,933,933, 933);
 
-  wbkgd(messagesWindowBackground, COLOR_PAIR(3));
-  mvwprintw(messagesWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
-  wrefresh(messagesWindowBackground);
+  //set background color
+  bkgd(COLOR_PAIR(3));
+  refresh();
 
+
+  //Set the background color,text, and box for the messages background window
+  wbkgd(messagesWindowBackground, COLOR_PAIR(3));
+
+  mvwprintw(messagesWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
+  box(messagesWindowBackground, 0, 0);
+  wrefresh(messagesWindowBackground);
+  //set the background color for the received messages window
   wbkgd(messagesWindow, COLOR_PAIR(3));
   wrefresh(messagesWindow);
 
+  //set the background color, box, and text for the textbox background window
   wbkgd(subBackground, COLOR_PAIR(2));
   box(subBackground, 0, 0);
-  box(messagesWindowBackground, 0, 0);
-  wrefresh(messagesWindowBackground);
-
   mvwprintw(subBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
   wrefresh(subBackground);
 
-  //position subwindow based on x and y of parent window
+  //set the background for the text box window
   wbkgd(subwindow, COLOR_PAIR(2));
   keypad(subwindow, 1);
-  refresh();
+
 }
 
 void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWindowBackground)
@@ -80,7 +82,7 @@ void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWin
   mvwin(msgWindow, 0, 0);
   mvwin(msgWindow, 2, 1);
   mvwin(win,(y-(y/5+1)),1 );
-  mvwin(winBg,(y-(y/5+3)),0 );
+  mvwin(winBg,(y-(y/5+3)),0);
 
   wbkgd(msgWindow, COLOR_PAIR(3));
   mvwprintw(msgWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
@@ -90,7 +92,7 @@ void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWin
   box(msgWindowBackground, 0, 0);
   box(winBg, 0, 0);
   mvwprintw(winBg, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
-    redrawwin(msgWindow);
+  redrawwin(msgWindow);
   wrefresh(winBg);
   wrefresh(msgWindow);
   wrefresh(win);
