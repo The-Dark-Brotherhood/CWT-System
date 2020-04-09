@@ -4,7 +4,10 @@
 //splitting a message into two if over 40 characters
 
 int clientRunning = 1;
+
+//DEBUG: change to pass into function
 int sockfd = 0;
+
 int main(int argc, char *argv[])
 {
   int                my_server_socket, len, done;
@@ -67,7 +70,7 @@ int main(int argc, char *argv[])
   | |                                         | |
   | |                                         | |
   | |         incoming messages               | |
-  | |         (heigh limited to 10            | |
+  | |         (height limited to 10           | |
   | |          messages - for scrolling       | |
   | |                                         | |
   | |                                         | |

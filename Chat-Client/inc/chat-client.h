@@ -40,14 +40,6 @@ extern int sockfd;
 #define INNER_WINDOW_STARTING_X     1
 
 
-typedef struct{
-  long type;
-  char address[IP_SIZE];
-  char name[NAME_SIZE];
-  char content[CONTENT_SIZE];
-  char time[TIME_SIZE];
-} ClientMessage;
-
 typedef struct {
     WINDOW* outgoingWindow;
     WINDOW* outgoingBckgrnd;
