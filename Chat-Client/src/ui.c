@@ -62,6 +62,8 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWind
   //set the background for the text box window
   wbkgd(subwindow, COLOR_PAIR(2));
   keypad(subwindow, 1);
+  wrefresh(subwindow);
+
 
 }
 

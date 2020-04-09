@@ -21,10 +21,11 @@
 #include <pthread.h>
 #include <sys/time.h>
 
+extern int sockfd;
 
 #define INPUT_MAX     81
 #define BOX_WIDTH     70
-#define MESSAGE_SIZE  79
+#define MESSAGE_SIZE  96
 #define PORT          5000
 #define IP_SIZE       16
 #define TIME_SIZE     9
@@ -40,6 +41,14 @@ typedef struct{
   char time[TIME_SIZE];
 } ClientMessage;
 
+typedef struct {
+    WINDOW* outgoingWindow;
+    WINDOW* outgoingBckgrnd;
+    WINDOW* incomingWindow;
+    WINDOW* incomingBckgrnd;
+    char* userName;
+} Windows;
+
 void blankWin(WINDOW *win);
 void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWindow, WINDOW *messagesWindowBackground);
 void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWindowBackground);
@@ -47,3 +56,4 @@ void placeCursor(int* cursorX, int* cursorY, WINDOW* subWindow, int stringLength
 void getClientIP(char* clientIP);
 void format_time(char *output);
 void* sendMessage(void* message);
+void* recv_msg_handler(void* pargs);

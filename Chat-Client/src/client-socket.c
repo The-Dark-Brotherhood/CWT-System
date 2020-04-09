@@ -36,25 +36,79 @@ void format_time(char *output)
 
 
 //still need to add in the address to send to
-void* sendMessage(void* outgoingMsg)
+void* sendMessage(void* args)
 {
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  int x,y;
+  getmaxyx(stdscr,y,x);
+  Windows *windows = (Windows*)args;
+  char clientIP[IP_SIZE] = "";
+  getClientIP(clientIP);
+  char str[INPUT_MAX] = "";
+  char input[INPUT_MAX] = "";
+  char time[19] = "";
 
-  struct sockaddr_in serv_addr;
-  memset(&serv_addr, 0, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-  serv_addr.sin_port = htons(5568);
-  connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+  while(1)
+  {
+    format_time(time);
+    blankWin(windows->outgoingWindow);
+    int ret = 0;
+    mvwprintw(windows->outgoingWindow, 0,0, input, 80);
+    placeCursor(&x, &y, windows->outgoingWindow, (int)strlen(input));
 
-  char *message = (char*) calloc(strlen(outgoingMsg)+1, sizeof(char)) ;
-  strcpy(message, outgoingMsg) ;
-  send(sock, message, strlen(message)+1, 0) ;
+    ret = mvwgetnstr(windows->outgoingWindow, y, x, str, 80-strlen(input));
 
-  char *buffer = (char*) calloc(buffersize, sizeof(char)) ;
-  read(sock, buffer, buffersize);
-  //waddstr(messagesWindow, buffer);
-  //wrefresh(messagesWindow);
-  close(sock);
-  pthread_exit(NULL);
+    if(ret == OK)
+    {
+      blankWin(windows->outgoingWindow);
+
+      strcat(input, str);
+      char outgoingMsg[MESSAGE_SIZE] = "";
+      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, windows->userName, input, time);
+      waddstr(windows->incomingWindow, outgoingMsg);
+      wrefresh(windows->incomingWindow);
+      char buffer[2048] = {};
+      strcpy(buffer, outgoingMsg);
+      send(sockfd, buffer, strlen(buffer), 0);
+      if(!strcmp(str, ">>bye<<"))
+      {
+        break;
+      }
+      input[0] = 0;
+    }
+    else if(ret == KEY_RESIZE)
+    {
+      strcat(input, str);
+
+      resizeWindows(windows->outgoingWindow, windows->outgoingBckgrnd, windows->incomingWindow, windows->incomingBckgrnd);
+    }
+    else
+    {
+      waddstr(windows->outgoingWindow, "Hmmmmm\n");
+    }
+  }
+    return NULL;
+}
+
+void* recv_msg_handler(void* pargs)
+{
+  char message[85] = {};
+  while (1)
+  {
+    int receive = recv(sockfd, message, 85, 0);
+    if (receive > 0)
+    {
+      waddstr((WINDOW*)pargs, message);
+      wrefresh((WINDOW*)pargs);
+    }
+    else if (receive == 0)
+    {
+      //break;
+    }
+    else
+    {
+      // -1
+    }
+    memset(message, 0, sizeof(message));
+  }
+  return NULL;
 }

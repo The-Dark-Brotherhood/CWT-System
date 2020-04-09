@@ -4,16 +4,17 @@
 //To do, two threads. one for sending one for receiving
 //splitting a message into two if over 40 characters
 
-
+//for threads to know if should exit right away
+//should have thread that spawns threads for listening?
+int clientRunning = 1;
+int sockfd = 0;
 int main(int argc, char *argv[])
 {
   int                my_server_socket, len, done;
   int                whichClient;
-  struct sockaddr_in server_addr;
   struct hostent*    host;
 
-  char clientIP[IP_SIZE] = "";
-  getClientIP(clientIP);
+
 
 
   //   if (argc != 3)
@@ -68,55 +69,106 @@ int main(int argc, char *argv[])
 
   //Should color change when new message received?
 
-  int numMessages = 0;
 
-  char str[INPUT_MAX] = "";
-  char input[INPUT_MAX] = "";
+  struct sockaddr_in server_addr;
 
-  wrefresh(subwindow);
-  for(;;)
+  /* Socket settings */
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  server_addr.sin_port = htons(5567);
+
+
+  // Connect to Server
+  int err = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+  if (err == -1)
   {
-    char time[19] = "";
-    format_time(time);
-    blankWin(subwindow);
-    int ret = 0;
-    mvwprintw(subwindow, 0,0, input, 80);
-    placeCursor(&x, &y, subwindow, (int)strlen(input));
-
-    ret = mvwgetnstr(subwindow, y, x, str, 80-strlen(input));
-
-    if(ret == OK)
-    {
-      blankWin(subwindow);
-      if(!strcmp(str, ">>bye<<"))
-      {
-        break;
-      }
-      strcat(input, str);
-      char outgoingMsg[MESSAGE_SIZE] = "";
-      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, argv[1], input, time);
-      waddstr(messagesWindow, outgoingMsg);
-      wrefresh(messagesWindow);
-
-      pthread_t tid;
-       if( pthread_create(&tid, NULL, sendMessage, (void *)outgoingMsg) < 0)
-      {
-          perror("could not create thread");
-          return 1;
-      }
-      input[0] = 0;
-
-
-    }
-    else if(ret == KEY_RESIZE)
-    {
-      strcat(input, str);
-
-      resizeWindows(subwindow, subBackground, messagesWindow, messagesWindowBackground);
-    }
-
+    printf("ERROR: connect\n");
+    return -1;
   }
 
+  // Send name
+
+
+
+  // pthread_t send_msg_thread;
+  // if(pthread_create(&send_msg_thread, NULL, (void *) send_msg_handler, NULL) != 0)
+  // {
+  //   printf("ERROR: pthread\n");
+  //   return EXIT_FAILURE;
+  // }
+  send(sockfd, "You're in\n", 32, 0);
+  pthread_t recv_msg_thread;
+  if(pthread_create(&recv_msg_thread, NULL, (void *) recv_msg_handler, (void*)messagesWindow) != 0)
+  {
+    printf("ERROR: pthread\n");
+    return EXIT_FAILURE;
+  }
+  Windows windows = {
+    .outgoingWindow = subwindow,
+    .outgoingBckgrnd = subBackground,
+    .incomingWindow = messagesWindow,
+    .incomingBckgrnd = messagesWindowBackground,
+    .userName = argv[1]
+  };
+sendMessage((void*)&windows);
+  // pthread_t send_msg_thread;
+  // if(pthread_create(&send_msg_thread, NULL, (void *) sendMessage, (void*)&windows) != 0)
+  // {
+  //   printf("ERROR: pthread\n");
+  //   return EXIT_FAILURE;
+  // }
+
+
+  // char str[INPUT_MAX] = "";
+  // char input[INPUT_MAX] = "";
+  //
+  // for(;;)
+  // {
+  //   char time[19] = "";
+  //   format_time(time);
+  //   blankWin(subwindow);
+  //   int ret = 0;
+  //   mvwprintw(subwindow, 0,0, input, 80);
+  //   placeCursor(&x, &y, subwindow, (int)strlen(input));
+  //
+  //   ret = mvwgetnstr(subwindow, y, x, str, 80-strlen(input));
+  //
+  //   if(ret == OK)
+  //   {
+  //     blankWin(subwindow);
+  //     if(!strcmp(str, ">>bye<<"))
+  //     {
+  //       break;
+  //     }
+  //     strcat(input, str);
+  //     char outgoingMsg[MESSAGE_SIZE] = "";
+  //     sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, argv[1], input, time);
+  //     waddstr(messagesWindow, outgoingMsg);
+  //     wrefresh(messagesWindow);
+  //
+  //     pthread_t tid;
+  //     if( pthread_create(&tid, NULL, sendMessage, (void *)outgoingMsg) < 0)
+  //     {
+  //         perror("could not create thread");
+  //         //return 1;
+  //     }
+  //     input[0] = 0;
+  //
+  //
+  //   }
+  //   else if(ret == KEY_RESIZE)
+  //   {
+  //     strcat(input, str);
+  //
+  //     resizeWindows(subwindow, subBackground, messagesWindow, messagesWindowBackground);
+  //   }
+  //
+  // }
+  while (clientRunning){
+    sleep(1);
+    }
+  close(sockfd);
   getch();
   delwin(subBackground);
   delwin(messagesWindow);
