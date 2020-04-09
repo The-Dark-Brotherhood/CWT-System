@@ -20,7 +20,7 @@ void blankWin(WINDOW *win)
   wrefresh(win);
 }
 
-void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWindow, WINDOW *messagesWindowBackground)
+void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, WINDOW *msgWinBackground)
 {
   int x,y;
   getmaxyx(stdscr,y,x);
@@ -44,25 +44,25 @@ void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWind
 
 
   //Set the background color,text, and box for the messages background window
-  wbkgd(messagesWindowBackground, COLOR_PAIR(3));
+  wbkgd(msgWinBackground, COLOR_PAIR(3));
 
-  mvwprintw(messagesWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
-  box(messagesWindowBackground, 0, 0);
-  wrefresh(messagesWindowBackground);
+  mvwprintw(msgWinBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
+  box(msgWinBackground, 0, 0);
+  wrefresh(msgWinBackground);
   //set the background color for the received messages window
-  wbkgd(messagesWindow, COLOR_PAIR(3));
-  wrefresh(messagesWindow);
+  wbkgd(msgWin, COLOR_PAIR(3));
+  wrefresh(msgWin);
 
   //set the background color, box, and text for the textbox background window
-  wbkgd(subBackground, COLOR_PAIR(2));
-  box(subBackground, 0, 0);
-  mvwprintw(subBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
-  wrefresh(subBackground);
+  wbkgd(txtBoxBackground, COLOR_PAIR(2));
+  box(txtBoxBackground, 0, 0);
+  mvwprintw(txtBoxBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
+  wrefresh(txtBoxBackground);
 
   //set the background for the text box window
-  wbkgd(subwindow, COLOR_PAIR(2));
-  keypad(subwindow, 1);
-  wrefresh(subwindow);
+  wbkgd(txtBoxWin, COLOR_PAIR(2));
+  keypad(txtBoxWin, 1);
+  wrefresh(txtBoxWin);
 
 
 }
@@ -103,10 +103,10 @@ void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWin
 
 }
 
-void placeCursor(int* cursorX, int* cursorY, WINDOW* subWindow, int stringLength)
+void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength)
 {
   int x,y;
-  getmaxyx(subWindow,y,x);
+  getmaxyx(txtBoxWin,y,x);
 
   *cursorY = (stringLength/x);
   *cursorX = (stringLength%x);

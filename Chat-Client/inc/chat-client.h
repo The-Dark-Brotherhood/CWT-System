@@ -20,6 +20,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <sys/time.h>
+extern int clientRunning;
 
 extern int sockfd;
 
@@ -31,7 +32,13 @@ extern int sockfd;
 #define TIME_SIZE     9
 #define NAME_SIZE     6
 #define CONTENT_SIZE  41
-#define buffersize 1024
+#define INNER_WINDOW_PADDING  2
+#define BCKGRND_PADDING_OFFSET  3
+#define INCOMING_MSG_WINDOW_HEIGHT  11
+#define TXT_BOX_HEIGHT_RATIO        5
+#define BCKGRND_STARTING_X          0
+#define INNER_WINDOW_STARTING_X     1
+
 
 typedef struct{
   long type;
@@ -50,10 +57,10 @@ typedef struct {
 } Windows;
 
 void blankWin(WINDOW *win);
-void setUpWindows(WINDOW *subwindow, WINDOW *subBackground, WINDOW *messagesWindow, WINDOW *messagesWindowBackground);
-void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWindowBackground);
-void placeCursor(int* cursorX, int* cursorY, WINDOW* subWindow, int stringLength);
+void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, WINDOW *msgWinBackground);
+void resizeWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, WINDOW *msgWinBackground);
+void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength);
 void getClientIP(char* clientIP);
 void format_time(char *output);
 void* sendMessage(void* message);
-void* recv_msg_handler(void* pargs);
+void* recv_msg_handler(void* msgWin);

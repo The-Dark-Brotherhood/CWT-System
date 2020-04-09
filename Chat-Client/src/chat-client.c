@@ -1,11 +1,8 @@
 #include "../inc/chat-client.h"
 
 //Recommended to take in arguments for user and server
-//To do, two threads. one for sending one for receiving
 //splitting a message into two if over 40 characters
 
-//for threads to know if should exit right away
-//should have thread that spawns threads for listening?
 int clientRunning = 1;
 int sockfd = 0;
 int main(int argc, char *argv[])
@@ -13,9 +10,6 @@ int main(int argc, char *argv[])
   int                my_server_socket, len, done;
   int                whichClient;
   struct hostent*    host;
-
-
-
 
   //   if (argc != 3)
   // {
@@ -52,129 +46,109 @@ int main(int argc, char *argv[])
   //      }
 
 
-
+  //Create the ncurses windows.
   initscr();
   cbreak();
-  //signal (SIGWINCH, NULL);
   refresh();
+
+  //get the x,y of terminal window in order
+  //to set proper width/height dimension of windows
   int x,y;
   getmaxyx(stdscr,y,x);
-  WINDOW *messagesWindowBackground = newwin(y-(y/5+3), x, 0, 0);
-  WINDOW *messagesWindow = newwin(11, x-2, 2, 1);
-  scrollok(messagesWindow, TRUE);
-  WINDOW *subBackground = newwin(y/5+3,x,(y-(y/5+3)),0);
-  WINDOW *subwindow = newwin(y/5,x-2,(y-(y/5+1)),1);
 
-  setUpWindows(subwindow, subBackground, messagesWindow, messagesWindowBackground);
+  //initialize and set the dimensions of windows
+  //UI consists of 4 windows -2 inner windows which
+  //hold the outgoing and incoming messages
+  // -2 windows are the background for the incoming
+  // and outgoing messages
+  /*
+   _____________________________________________
+  |  _________________________________________  |
+  | |                                         | |
+  | |                                         | |
+  | |         incoming messages               | |
+  | |         (heigh limited to 10            | |
+  | |          messages - for scrolling       | |
+  | |                                         | |
+  | |                                         | |
+  | |_________________________________________| |
+  |_____________________________________________|
+  |  _________________________________________  |
+  | |                                         | |
+  | |            outgoing messages            | |
+  | |                                         | |
+  | |_________________________________________| |
+  |_____________________________________________|
 
-  //Should color change when new message received?
+  */
 
+  //Window dimensions are set using % in order to add some responsivity
+  //to the application
+  WINDOW *msgWinBackground = newwin(y-(y/5+BCKGRND_PADDING_OFFSET), x, 0, BCKGRND_STARTING_X);
+  WINDOW *msgWin = newwin(INCOMING_MSG_WINDOW_HEIGHT, x-INNER_WINDOW_PADDING, 2, INNER_WINDOW_STARTING_X);
+  scrollok(msgWin, TRUE);
+  WINDOW *txtBoxBackground = newwin(y/TXT_BOX_HEIGHT_RATIO+BCKGRND_PADDING_OFFSET,x,(y-(y/TXT_BOX_HEIGHT_RATIO+BCKGRND_PADDING_OFFSET)),BCKGRND_STARTING_X);
+  WINDOW *txtBoxWin = newwin(y/TXT_BOX_HEIGHT_RATIO,x-INNER_WINDOW_PADDING,(y-(y/TXT_BOX_HEIGHT_RATIO+1)),INNER_WINDOW_STARTING_X);
 
+  //Set the colors, draw the boxes, write the box titles
+  setUpWindows(txtBoxWin, txtBoxBackground, msgWin, msgWinBackground);
+
+  //Connect to the server
   struct sockaddr_in server_addr;
 
-  /* Socket settings */
+  //Socket settings
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
   server_addr.sin_port = htons(5567);
 
 
-  // Connect to Server
+  //Connect to Server
   int err = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
   if (err == -1)
   {
-    printf("ERROR: connect\n");
+    printf("Error: unable to connect\n");
     return -1;
   }
 
-  // Send name
-
-
-
-  // pthread_t send_msg_thread;
-  // if(pthread_create(&send_msg_thread, NULL, (void *) send_msg_handler, NULL) != 0)
-  // {
-  //   printf("ERROR: pthread\n");
-  //   return EXIT_FAILURE;
-  // }
+  //DEBUGGGGGG
   send(sockfd, "You're in\n", 32, 0);
+
+  //Create the thread responsible for receiving messages from the server
   pthread_t recv_msg_thread;
-  if(pthread_create(&recv_msg_thread, NULL, (void *) recv_msg_handler, (void*)messagesWindow) != 0)
+  if(pthread_create(&recv_msg_thread, NULL, (void *) recv_msg_handler, (void*)msgWin) != 0)
   {
-    printf("ERROR: pthread\n");
+    printf("Error creating the receive messages thread\n");
     return EXIT_FAILURE;
   }
+
+  //the following struct will be passed as an argument to the message-sending thread.
   Windows windows = {
-    .outgoingWindow = subwindow,
-    .outgoingBckgrnd = subBackground,
-    .incomingWindow = messagesWindow,
-    .incomingBckgrnd = messagesWindowBackground,
+    .outgoingWindow = txtBoxWin,
+    .outgoingBckgrnd = txtBoxBackground,
+    .incomingWindow = msgWin,
+    .incomingBckgrnd = msgWinBackground,
     .userName = argv[1]
   };
-sendMessage((void*)&windows);
-  // pthread_t send_msg_thread;
-  // if(pthread_create(&send_msg_thread, NULL, (void *) sendMessage, (void*)&windows) != 0)
-  // {
-  //   printf("ERROR: pthread\n");
-  //   return EXIT_FAILURE;
-  // }
 
+  //Create the thread responsible for sending messages to the server, passing struct as arg
+  pthread_t send_msg_thread;
+  if(pthread_create(&send_msg_thread, NULL, (void *) sendMessage, (void*)&windows) != 0)
+  {
+    printf("Error creating the send messages thread\n");
+    return EXIT_FAILURE;
+  }
+  //wait for msg thread to end before exiting
+  pthread_join(send_msg_thread, NULL);
 
-  // char str[INPUT_MAX] = "";
-  // char input[INPUT_MAX] = "";
-  //
-  // for(;;)
-  // {
-  //   char time[19] = "";
-  //   format_time(time);
-  //   blankWin(subwindow);
-  //   int ret = 0;
-  //   mvwprintw(subwindow, 0,0, input, 80);
-  //   placeCursor(&x, &y, subwindow, (int)strlen(input));
-  //
-  //   ret = mvwgetnstr(subwindow, y, x, str, 80-strlen(input));
-  //
-  //   if(ret == OK)
-  //   {
-  //     blankWin(subwindow);
-  //     if(!strcmp(str, ">>bye<<"))
-  //     {
-  //       break;
-  //     }
-  //     strcat(input, str);
-  //     char outgoingMsg[MESSAGE_SIZE] = "";
-  //     sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, argv[1], input, time);
-  //     waddstr(messagesWindow, outgoingMsg);
-  //     wrefresh(messagesWindow);
-  //
-  //     pthread_t tid;
-  //     if( pthread_create(&tid, NULL, sendMessage, (void *)outgoingMsg) < 0)
-  //     {
-  //         perror("could not create thread");
-  //         //return 1;
-  //     }
-  //     input[0] = 0;
-  //
-  //
-  //   }
-  //   else if(ret == KEY_RESIZE)
-  //   {
-  //     strcat(input, str);
-  //
-  //     resizeWindows(subwindow, subBackground, messagesWindow, messagesWindowBackground);
-  //   }
-  //
-  // }
-  while (clientRunning){
-    sleep(1);
-    }
+  //close socket
   close(sockfd);
-  getch();
-  delwin(subBackground);
-  delwin(messagesWindow);
-  delwin(messagesWindowBackground);
-  delwin(subwindow);
 
+  //delete the windows
+  delwin(txtBoxBackground);
+  delwin(msgWin);
+  delwin(msgWinBackground);
+  delwin(txtBoxWin);
   endwin();
   return(0);
 

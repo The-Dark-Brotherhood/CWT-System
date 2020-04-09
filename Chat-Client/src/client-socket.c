@@ -46,8 +46,9 @@ void* sendMessage(void* args)
   char str[INPUT_MAX] = "";
   char input[INPUT_MAX] = "";
   char time[19] = "";
+  char message[85] = {};
 
-  while(1)
+  while(clientRunning)
   {
     format_time(time);
     blankWin(windows->outgoingWindow);
@@ -69,8 +70,10 @@ void* sendMessage(void* args)
       char buffer[2048] = {};
       strcpy(buffer, outgoingMsg);
       send(sockfd, buffer, strlen(buffer), 0);
+
       if(!strcmp(str, ">>bye<<"))
       {
+        clientRunning = 0;
         break;
       }
       input[0] = 0;
@@ -89,24 +92,26 @@ void* sendMessage(void* args)
     return NULL;
 }
 
-void* recv_msg_handler(void* pargs)
+void* recv_msg_handler(void* msgWindow)
 {
+
+  //need to have a check for the server is running
+
   char message[85] = {};
-  while (1)
+  while (clientRunning)
   {
     int receive = recv(sockfd, message, 85, 0);
     if (receive > 0)
     {
-      waddstr((WINDOW*)pargs, message);
-      wrefresh((WINDOW*)pargs);
+      if(clientRunning)
+      {
+        waddstr((WINDOW*)msgWindow, message);
+        wrefresh((WINDOW*)msgWindow);
+      }
     }
     else if (receive == 0)
     {
-      //break;
-    }
-    else
-    {
-      // -1
+      clientRunning = 0;
     }
     memset(message, 0, sizeof(message));
   }
