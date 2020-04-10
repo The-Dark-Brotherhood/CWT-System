@@ -56,3 +56,4 @@ void getClientIP(char* clientIP);
 void format_time(char *output);
 void* sendMessage(void* message);
 void* recv_msg_handler(void* msgWin);
+int splitMessage(char* message);

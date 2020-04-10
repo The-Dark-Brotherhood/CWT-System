@@ -64,7 +64,21 @@ void* sendMessage(void* args)
 
       strcat(input, str);
       char outgoingMsg[MESSAGE_SIZE] = "";
-      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, windows->userName, input, time);
+      char* ps = input;
+      if(strlen(input) > 40)
+      {
+        int index = splitMessage(input);
+        char firstMsg[41] = "";
+        strncpy(firstMsg, input, index);
+        sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, windows->userName, firstMsg, time);
+        waddstr(windows->incomingWindow, outgoingMsg);
+        wrefresh(windows->incomingWindow);
+        char buffer[2048] = {};
+        strcpy(buffer, outgoingMsg);
+        send(sockfd, buffer, strlen(buffer), 0);
+        ps += index;
+      }
+      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, windows->userName, ps, time);
       waddstr(windows->incomingWindow, outgoingMsg);
       wrefresh(windows->incomingWindow);
       char buffer[2048] = {};
@@ -116,4 +130,36 @@ void* recv_msg_handler(void* msgWindow)
     memset(message, 0, sizeof(message));
   }
   return NULL;
+}
+
+
+//assuming the message length is over 40
+int splitMessage(char* message)
+{
+  int retValue = 0;
+  int length = strlen(message);
+  int middle = 40;
+  int distanceRight = 0;
+  int i = middle;
+
+  int distanceLeft = 0;
+
+  for (int i = middle; i > 0; i--)
+  {
+  	if (message[i] == ' ')
+  	{
+  		break;
+  	}
+  	distanceLeft++;
+   }
+
+
+  retValue = middle - distanceLeft;
+  if ((length - retValue) > 40)
+  {
+  	retValue = middle;;
+  }
+
+  //offset index, to return number of bytes to copy in
+  return retValue + 1;
 }
