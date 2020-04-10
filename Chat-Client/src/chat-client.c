@@ -1,54 +1,76 @@
 #include "../inc/chat-client.h"
 
 //Recommended to take in arguments for user and server
-//splitting a message into two if over 40 characters
 
 int clientRunning = 1;
 
 //DEBUG: change to pass into function
-int sockfd = 0;
 
 int main(int argc, char *argv[])
 {
+  struct sockaddr_in server_address;
+  struct hostent*     host;
   int                my_server_socket, len, done;
-  int                whichClient;
-  struct hostent*    host;
 
-  //   if (argc != 3)
-  // {
-  //   printf ("USAGE : chat-client <user> <server_name>\n");
-  //   return 1;
-  // }
-  //
-  // if(strlen(argv[1]) > 5)
-  // {
-  //   printf("User name length must be 5 characters max\n");
-  //   return 2;
-  // }
-  //
-  // /*
-  //  * determine host info for server name supplied
-  //  */
-  // if ((host = gethostbyname(argv[2])) == NULL)
-  // {
-  //   printf ("[CLIENT-%d] : Host Info Search - FAILED\n",whichClient);
-  //   return 3;
-  // }
-  //
-  // memset (&server_addr, 0, sizeof (server_addr));
-  // server_addr.sin_family = AF_INET;
-  // memcpy (&server_addr.sin_addr, host->h_addr, host->h_length);
-  // server_addr.sin_port = htons (PORT);
-  //
-  // printf ("[CLIENT-%d] : Getting STREAM Socket to talk to SERVER\n", whichClient);
-  // fflush(stdout);
-  //      if ((my_server_socket = socket (AF_INET, SOCK_STREAM, 0)) < 0)
-  //      {
-  //        printf ("[CLIENT-%d] : Getting Client Socket - FAILED\n", whichClient);
-  //        return 4;
-  //      }
+  if (argc != 3)
+  {
+    printf ("USAGE : chat-client <user> <server_name>\n");
+    return 1;
+  }
+
+  if(strlen(argv[1]) > 5)
+  {
+    printf("User name length must be 5 characters max\n");
+    return 2;
+  }
+
+  /*
+   * determine host info for server name supplied
+   */
+  if ((host = gethostbyname(argv[2])) == NULL)
+  {
+    printf ("[CLIENT] : Host Info Search - FAILED\n");
+    return 3;
+  }
+
+  // memset (&server_address, 0, sizeof (server_address));
+  // server_address.sin_family = AF_INET;
+  // memcpy (&server_address.sin_addrs_addr = inet_addr, IPbuffer, sizeof(IPbuffer));
+  // server_address.sin_port = htons (5568);
+
+  int sockfd = 0;
+
+  if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0)
+  {
+   printf ("[CLIENT] : Getting Client Socket - FAILED\n");
+   return 4;
+  }
+
+  //Connect to the server
+
+  //Socket settings
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  char *ServerIP = inet_ntoa(*((struct in_addr*)
+                           host->h_addr_list[0]));
+                           printf("%s\n", ServerIP);
+
+  // server_address.sin_family = AF_INET;
+  // server_address.sin_addr.s_addr = inet_addr(IPbuffer);
+  // server_address.sin_port = htons(5568);
+  server_address.sin_family = AF_INET;
+  server_address.sin_addr.s_addr = inet_addr(ServerIP);
+  server_address.sin_port = htons(5568);
 
 
+  //Connect to Server
+  int err = connect(sockfd, (struct sockaddr *)&server_address, sizeof(server_address));
+  if (err == -1)
+  {
+    printf("Error: unable to connect\n");
+    return -1;
+  }
+  //DEBUGGGGGG
+  send(sockfd, "You're in\n", 32, 0);
   //Create the ncurses windows.
   initscr();
   cbreak();
@@ -96,47 +118,29 @@ int main(int argc, char *argv[])
   //Set the colors, draw the boxes, write the box titles
   setUpWindows(txtBoxWin, txtBoxBackground, msgWin, msgWinBackground);
 
-  //Connect to the server
-  struct sockaddr_in server_addr;
-
-  //Socket settings
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-  server_addr.sin_port = htons(5567);
 
 
-  //Connect to Server
-  int err = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-  if (err == -1)
-  {
-    printf("Error: unable to connect\n");
-    return -1;
-  }
-
-  //DEBUGGGGGG
-  send(sockfd, "You're in\n", 32, 0);
+  //the following struct will be passed as an argument to the rmessage-sendingreceiving threads.
+  SendThreadArgs args = {
+    .outgoingWindow = txtBoxWin,
+    .outgoingBckgrnd = txtBoxBackground,
+    .incomingWindow = msgWin,
+    .incomingBckgrnd = msgWinBackground,
+    .userName = argv[1],
+    .socket = sockfd
+  };
 
   //Create the thread responsible for receiving messages from the server
   pthread_t recv_msg_thread;
-  if(pthread_create(&recv_msg_thread, NULL, (void *) recv_msg_handler, (void*)msgWin) != 0)
+  if(pthread_create(&recv_msg_thread, NULL, (void *) receiveMsg, (void*)&args) != 0)
   {
     printf("Error creating the receive messages thread\n");
     return EXIT_FAILURE;
   }
 
-  //the following struct will be passed as an argument to the message-sending thread.
-  Windows windows = {
-    .outgoingWindow = txtBoxWin,
-    .outgoingBckgrnd = txtBoxBackground,
-    .incomingWindow = msgWin,
-    .incomingBckgrnd = msgWinBackground,
-    .userName = argv[1]
-  };
-
   //Create the thread responsible for sending messages to the server, passing struct as arg
   pthread_t send_msg_thread;
-  if(pthread_create(&send_msg_thread, NULL, (void *) sendMessage, (void*)&windows) != 0)
+  if(pthread_create(&send_msg_thread, NULL, (void *) sendMessage, (void*)&args) != 0)
   {
     printf("Error creating the send messages thread\n");
     return EXIT_FAILURE;

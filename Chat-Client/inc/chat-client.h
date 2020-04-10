@@ -22,8 +22,6 @@
 #include <sys/time.h>
 extern int clientRunning;
 
-extern int sockfd;
-
 #define INPUT_MAX     81
 #define BOX_WIDTH     70
 #define MESSAGE_SIZE  96
@@ -46,7 +44,8 @@ typedef struct {
     WINDOW* incomingWindow;
     WINDOW* incomingBckgrnd;
     char* userName;
-} Windows;
+    int socket;
+} SendThreadArgs;
 
 void blankWin(WINDOW *win);
 void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, WINDOW *msgWinBackground);
@@ -54,6 +53,6 @@ void resizeWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, 
 void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength);
 void getClientIP(char* clientIP);
 void format_time(char *output);
-void* sendMessage(void* message);
-void* recv_msg_handler(void* msgWin);
+void* sendMessage(void* arg);
+void* receiveMsg(void* arg);
 int splitMessage(char* message);

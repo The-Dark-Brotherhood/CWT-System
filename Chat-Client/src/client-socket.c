@@ -36,31 +36,38 @@ void format_time(char *output)
 
 
 //still need to add in the address to send to
-void* sendMessage(void* args)
+void* sendMessage(void* arg)
 {
   int x,y;
+  int windowX, windowY;
   getmaxyx(stdscr,y,x);
-  Windows *windows = (Windows*)args;
+  SendThreadArgs *data = (SendThreadArgs*)arg;
   char clientIP[IP_SIZE] = "";
   getClientIP(clientIP);
   char str[INPUT_MAX] = "";
   char input[INPUT_MAX] = "";
   char time[19] = "";
   char message[85] = {};
-
+  int addNewLine = 0;
   while(clientRunning)
   {
-    format_time(time);
-    blankWin(windows->outgoingWindow);
-    int ret = 0;
-    mvwprintw(windows->outgoingWindow, 0,0, input, 80);
-    placeCursor(&x, &y, windows->outgoingWindow, (int)strlen(input));
+    getmaxyx(data->outgoingWindow, windowY, windowX);
+    if(windowX > 40)
+    {
+      addNewLine = 1;
+    }
 
-    ret = mvwgetnstr(windows->outgoingWindow, y, x, str, 80-strlen(input));
+    format_time(time);
+    blankWin(data->outgoingWindow);
+    int ret = 0;
+    mvwprintw(data->outgoingWindow, 0,0, input, 80);
+    placeCursor(&x, &y, data->outgoingWindow, (int)strlen(input));
+
+    ret = mvwgetnstr(data->outgoingWindow, y, x, str, 80-strlen(input));
 
     if(ret == OK)
     {
-      blankWin(windows->outgoingWindow);
+      blankWin(data->outgoingWindow);
 
       strcat(input, str);
       char outgoingMsg[MESSAGE_SIZE] = "";
@@ -70,20 +77,30 @@ void* sendMessage(void* args)
         int index = splitMessage(input);
         char firstMsg[41] = "";
         strncpy(firstMsg, input, index);
-        sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, windows->userName, firstMsg, time);
-        waddstr(windows->incomingWindow, outgoingMsg);
-        wrefresh(windows->incomingWindow);
+        sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, firstMsg, time);
+
+        waddstr(data->incomingWindow, outgoingMsg);
+        if(addNewLine)
+        {
+            waddstr(data->incomingWindow,"\n");
+        }
+        wrefresh(data->incomingWindow);
         char buffer[2048] = {};
         strcpy(buffer, outgoingMsg);
-        send(sockfd, buffer, strlen(buffer), 0);
+        send(data->socket, buffer, strlen(buffer), 0);
         ps += index;
       }
-      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)\n", clientIP, windows->userName, ps, time);
-      waddstr(windows->incomingWindow, outgoingMsg);
-      wrefresh(windows->incomingWindow);
+      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, ps, time);
+
+      waddstr(data->incomingWindow, outgoingMsg);
+      if(addNewLine)
+      {
+          waddstr(data->incomingWindow,"\n");
+      }
+      wrefresh(data->incomingWindow);
       char buffer[2048] = {};
       strcpy(buffer, outgoingMsg);
-      send(sockfd, buffer, strlen(buffer), 0);
+      send(data->socket, buffer, strlen(buffer), 0);
 
       if(!strcmp(str, ">>bye<<"))
       {
@@ -95,32 +112,27 @@ void* sendMessage(void* args)
     else if(ret == KEY_RESIZE)
     {
       strcat(input, str);
-
-      resizeWindows(windows->outgoingWindow, windows->outgoingBckgrnd, windows->incomingWindow, windows->incomingBckgrnd);
-    }
-    else
-    {
-      waddstr(windows->outgoingWindow, "Hmmmmm\n");
+      resizeWindows(data->outgoingWindow, data->outgoingBckgrnd, data->incomingWindow, data->incomingBckgrnd);
     }
   }
     return NULL;
 }
 
-void* recv_msg_handler(void* msgWindow)
+void* receiveMsg(void* arg)
 {
 
   //need to have a check for the server is running
-
+  SendThreadArgs *data = (SendThreadArgs*)arg;
   char message[85] = {};
   while (clientRunning)
   {
-    int receive = recv(sockfd, message, 85, 0);
+    int receive = recv(data->socket, message, 85, 0);
     if (receive > 0)
     {
       if(clientRunning)
       {
-        waddstr((WINDOW*)msgWindow, message);
-        wrefresh((WINDOW*)msgWindow);
+        waddstr(data->incomingWindow, message);
+        wrefresh(data->incomingWindow);
       }
     }
     else if (receive == 0)
