@@ -1,11 +1,12 @@
 #include "../inc/chat-client.h"
 
+//Source: Sean Clarke
 void blankWin(WINDOW *win)
 {
   int i;
   int maxrow, maxcol;
-  char clearString [81] = "";
-  for(int i = 0; i < 80; i++)
+  char clearString [INPUT_MAX+1] = "";
+  for(int i = 0; i < INPUT_MAX; i++)
   {
     clearString[i] = 32;
   }
@@ -46,7 +47,7 @@ void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, W
   //Set the background color,text, and box for the messages background window
   wbkgd(msgWinBackground, COLOR_PAIR(3));
 
-  mvwprintw(msgWinBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);
+  mvwprintw(msgWinBackground, 1, (x/2 - 8), "INCOMING MESSAGES", INPUT_MAX);
   box(msgWinBackground, 0, 0);
   wrefresh(msgWinBackground);
   //set the background color for the received messages window
@@ -56,7 +57,7 @@ void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, W
   //set the background color, box, and text for the textbox background window
   wbkgd(txtBoxBackground, COLOR_PAIR(2));
   box(txtBoxBackground, 0, 0);
-  mvwprintw(txtBoxBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", 80);
+  mvwprintw(txtBoxBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", INPUT_MAX);
   wrefresh(txtBoxBackground);
 
   //set the background for the text box window
@@ -76,15 +77,15 @@ void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWin
   getmaxyx(stdscr,y,x);
 
   //check for resize failure
-  wresize(msgWindowBackground, y-(y/5+3), x);
-  wresize(msgWindow, 11, x-2);
-  wresize(winBg, (y/5+3), x);
-  wresize(win,y/5, x-2);
+  wresize(msgWindowBackground, y-(y/TXT_BOX_HEIGHT_RATIO+BCKGRND_PADDING_OFFSET), x);
+  wresize(msgWindow, INCOMING_MSG_WINDOW_HEIGHT, x-2);
+  wresize(winBg, (y/TXT_BOX_HEIGHT_RATIO+BCKGRND_PADDING_OFFSET), x);
+  wresize(win,y/TXT_BOX_HEIGHT_RATIO, x-2);
 
   mvwin(msgWindow, 0, 0);
   mvwin(msgWindow, 2, 1);
-  mvwin(win,(y-(y/5+1)),1 );
-  mvwin(winBg,(y-(y/5+3)),0);
+  mvwin(win,(y-(y/TXT_BOX_HEIGHT_RATIO+1)),1 );
+  mvwin(winBg,(y-(y/TXT_BOX_HEIGHT_RATIO+3)),0);
 
   wbkgd(msgWindow, COLOR_PAIR(3));
   mvwprintw(msgWindowBackground, 1, (x/2 - 8), "INCOMING MESSAGES", 80);

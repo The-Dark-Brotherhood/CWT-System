@@ -34,36 +34,42 @@ void format_time(char *output)
 
 }
 
+int checkIfNeedNewLine(WINDOW* incomingWindow)
+{
+  int windowX = 0;
+  int windowY = 0;
+  getmaxyx(incomingWindow, windowY, windowX);
+  if(windowX > MAX_CHAR_PER_MSG)
+  {
+    return 1;
+  }
+  return 0;
+}
 
-//still need to add in the address to send to
+
 void* sendMessage(void* arg)
 {
-  int x,y;
-  int windowX, windowY;
+  int x = 0;
+  int y = 0;;
+
   getmaxyx(stdscr,y,x);
   SendThreadArgs *data = (SendThreadArgs*)arg;
   char clientIP[IP_SIZE] = "";
   getClientIP(clientIP);
-  char str[INPUT_MAX] = "";
-  char input[INPUT_MAX] = "";
-  char time[19] = "";
-  char message[85] = {};
+  char str[INPUT_MAX+1] = "";
+  char input[INPUT_MAX+1] = "";
+  char time[TIME_SIZE] = "";
   int addNewLine = 0;
   while(clientRunning)
   {
-    getmaxyx(data->outgoingWindow, windowY, windowX);
-    if(windowX > 40)
-    {
-      addNewLine = 1;
-    }
+
 
     format_time(time);
     blankWin(data->outgoingWindow);
     int ret = 0;
-    mvwprintw(data->outgoingWindow, 0,0, input, 80);
+    mvwprintw(data->outgoingWindow, 0,0, input, INPUT_MAX);
     placeCursor(&x, &y, data->outgoingWindow, (int)strlen(input));
-
-    ret = mvwgetnstr(data->outgoingWindow, y, x, str, 80-strlen(input));
+    ret = mvwgetnstr(data->outgoingWindow, y, x, str, INPUT_MAX-strlen(input));
 
     if(ret == OK)
     {
@@ -72,19 +78,20 @@ void* sendMessage(void* arg)
       strcat(input, str);
       char outgoingMsg[MESSAGE_SIZE] = "";
       char* ps = input;
-      if(strlen(input) > 40)
+      if(strlen(input) > MAX_CHAR_PER_MSG)
       {
         int index = splitMessage(input);
-        char firstMsg[41] = "";
+        char firstMsg[MAX_CHAR_PER_MSG+1] = "";
         strncpy(firstMsg, input, index);
         sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, firstMsg, time);
-
         waddstr(data->incomingWindow, outgoingMsg);
-        if(addNewLine)
+
+        if (checkIfNeedNewLine(data->outgoingWindow))
         {
-            waddstr(data->incomingWindow,"\n");
+          waddstr(data->incomingWindow,"\n");
         }
         wrefresh(data->incomingWindow);
+        //DEBUG
         char buffer[2048] = {};
         strcpy(buffer, outgoingMsg);
         send(data->socket, buffer, strlen(buffer), 0);
@@ -93,11 +100,13 @@ void* sendMessage(void* arg)
       sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, ps, time);
 
       waddstr(data->incomingWindow, outgoingMsg);
-      if(addNewLine)
+      if (checkIfNeedNewLine(data->outgoingWindow))
       {
-          waddstr(data->incomingWindow,"\n");
+        waddstr(data->incomingWindow,"\n");
       }
       wrefresh(data->incomingWindow);
+
+      //DEBUG
       char buffer[2048] = {};
       strcpy(buffer, outgoingMsg);
       send(data->socket, buffer, strlen(buffer), 0);
@@ -123,16 +132,25 @@ void* receiveMsg(void* arg)
 
   //need to have a check for the server is running
   SendThreadArgs *data = (SendThreadArgs*)arg;
-  char message[85] = {};
+  char message[INPUT_MAX+1] = {};
   while (clientRunning)
   {
-    int receive = recv(data->socket, message, 85, 0);
+    int receive = recv(data->socket, message, INPUT_MAX+1, 0);
     if (receive > 0)
     {
+      if(!strcmp(message, SERVER_EXIT_MSG))
+      {
+        waddstr(data->incomingWindow, "The Server has shut down. Closing down application.\n");
+        clientRunning = 0;        
+      }
       if(clientRunning)
       {
         waddstr(data->incomingWindow, message);
-        wrefresh(data->incomingWindow);
+        if (checkIfNeedNewLine(data->incomingWindow))
+        {
+          waddstr(data->incomingWindow, "\n");
+        }
+          wrefresh(data->incomingWindow);
       }
     }
     else if (receive == 0)
@@ -150,10 +168,9 @@ int splitMessage(char* message)
 {
   int retValue = 0;
   int length = strlen(message);
-  int middle = 40;
+  int middle = MAX_CHAR_PER_MSG;
   int distanceRight = 0;
   int i = middle;
-
   int distanceLeft = 0;
 
   for (int i = middle; i > 0; i--)
@@ -165,13 +182,11 @@ int splitMessage(char* message)
   	distanceLeft++;
    }
 
-
   retValue = middle - distanceLeft;
-  if ((length - retValue) > 40)
+  if ((length - retValue) > MAX_CHAR_PER_MSG)
   {
   	retValue = middle;;
   }
-
   //offset index, to return number of bytes to copy in
   return retValue + 1;
 }
