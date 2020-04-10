@@ -2,24 +2,20 @@
 #include "../inc/chatServer.h"
 
 
-volatile bool running = true;
+volatile char running = TRUE;
 
 // DEBUG: Remove the debug flag in makefile
 int main(void)
 {
-  const char* path = "./CWTServer.log";
-  writeToLog("Test", path);
-
-  int		status, *ptr_status;   // DEBUG: Do I need this for something?
+  signal(SIGINT, closeServer);
   int serverSocket = -1;
   struct sockaddr_in serverAddr;
-  pthread_t   tid[NUM_THREADS] = { 0 };
 
   //= Create socket
   if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
   {
-    // Error getting the socket
-    return 1;
+    serverLog("ERROR", "Could not create server socket");
+    return -1;
   }
 
   //= Set up server configuration
@@ -31,9 +27,9 @@ int main(void)
   //= Bind server config to Socket
   if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
   {
-    // Cannot Bind to Socket
-   close(serverSocket);
-   return 2;
+    serverLog("ERROR", "Could not config server");
+    close(serverSocket);
+    return -2;
   }
 
   //= Set up Shared Mem and QUEUE // MESSAGE QUEUE;
@@ -41,9 +37,10 @@ int main(void)
   key_t msgKey = ftok(KEY_PATH, 'G');
   int msgID = 0;
 
-  if(msgKey == ID_ERROR)
+  if(msgKey == -1)
   {
-    return ID_ERROR;
+    serverLog("ERROR", "Could generate MSG_KEY");
+    return -3;
   }
 
   // Creates or Grab message queue
@@ -53,17 +50,19 @@ int main(void)
     msgID = msgget(msgKey, (IPC_CREAT | 0660));
     if(msgID == -1)
     {
-      return errno;
+      serverLog("ERROR", "Could not create or get MSG Queue");
+      return -4;
     }
   }
 
   // MASTER LIST;
-  // Generattes key
+  // Generate key
   key_t shmKey = ftok(SHMKEY_PATH, SHM_KEYID);
   int shmID = 0;
-  if(shmKey == ID_ERROR)
+  if(shmKey == -1)
   {
-    return ID_ERROR;
+    serverLog("ERROR", "Could not get SHList Key");
+    return -5;
   }
 
   // Creates or Grabs shared memory
@@ -74,18 +73,20 @@ int main(void)
     shmID = shmget(shmKey, sizeof(MasterList), (IPC_CREAT | 0660));
     if(shmID == -1)
     {
-      return errno;
+      serverLog("ERROR", "Could not create SHList");
+      return -6;
     }
   }
-
+  printf("SHMID INSIDE %d\n", shmID); // DEBUG:
   // Grab master list
   shList = (MasterList*)shmat (shmID, NULL, 0);       // Grabs the shared memory and
   shList->msgQueueID = msgID;                         // Assign the message queue ID
   shList->numberOfClients = 0;
 
   //= Listen for connections
-  if (listen(serverSocket, 5) < 0)
+  if(listen(serverSocket, 5) < 0)
   {
+   serverLog("ERROR", "Could not open server for connetions");
    close(serverSocket);
    return 3;
   }
@@ -99,37 +100,61 @@ int main(void)
   int numClient = 0;
 
   //= Iniciate broacasting thread
-  pthread_create(&tid[0], NULL, broadcastMessages, (void *)shList);
+  pthread_create(&shList->tid[0], NULL, broadcastMessages, (void *)shList);
+  serverLog("INFO", "Server Started Listening & Sending");
 
-  // Accepts client connection -> Spawns a thread for listenning for that client's message
-  while(running && shList->numberOfClients < MAX_CLIENTS)
+  // Accepts client connectionServer -> Spawns a thread for listenning for that client's message
+  while(shList->numberOfClients <= MAX_CLIENTS)
   {
     if((clientSocket = accept(serverSocket, (struct sockaddr*)&client, &clientLen)) < 0)
     {
-      return -1;
+      serverLog("ERROR", "Unexpected: Failed to accept client - CLOSING");
+      // DEBUG: Put the signal to clean up the memory
+      return -7;
     }
 
+    // Spawn thread for listenning for clients messages
     cInfo.socket = clientSocket;
-    shList->numberOfClients++;
-    pthread_create(&tid[1], NULL, clientListenningThread, (void *)&cInfo);
+    pthread_create(&shList->tid[1], NULL, clientListenningThread, (void *)&cInfo);
     fflush(stdout);
-    writeToLog("Client Accepted", path);
   }
-
-  //= Finish Execution -> Join threads and clean memory
-  // Join all threads
-  for (int i = 0; i < MAX_CLIENTS; ++i)
-  {
-    pthread_join(tid[i], NULL);
-  }
-
-  // DEBUG: Message
-  printf("-- Thread Done\n");
-
-  // Clean resources
-  msgctl (msgID, IPC_RMID, (struct msqid_ds*)NULL);
-  shmdt(shList);
-  shmctl(shmID, IPC_RMID, 0);
 
   return 0;
+}
+
+void closeServer(int signal_number)
+{
+  printf("Running in the close: %d\n", running  );
+  key_t shmKey = ftok(SHMKEY_PATH, SHM_KEYID);
+  if(shmKey == -1)
+  {
+    serverLog("ERROR", "Could not get SHList Key to clean memory");
+  }
+  MasterList* shList = NULL;
+  int shmID = shmget(shmKey, sizeof(MasterList), 0);
+  printf("SHMID INSIDE %d\n", shmID);
+  if(shmID != -1)
+  {
+    MasterList* list = (MasterList*)shmat(shmID, NULL, SHM_RDONLY);
+    printf("--> %p (Closing)\n", list);
+
+    // Join all threads
+    for (int counter = 0; counter < NUM_THREADS; counter++)
+    {
+      pthread_join(list->tid[counter], NULL);
+    }
+
+    // Clean resources
+    msgctl(list->msgQueueID, IPC_RMID, (struct msqid_ds*)NULL);
+    shmdt(list);
+    shmctl(shmID, IPC_RMID, 0);
+    serverLog("DEBUG", "Server Closed");
+  }
+  else
+  {
+    serverLog("ERROR", "Could not retrieve master list for clean up");
+  }
+
+  // Terminate
+	exit(1);
 }

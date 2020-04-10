@@ -30,6 +30,23 @@ void getTime(char* output)
   strftime(output, 49, "%F %T",info);
 }
 
+// Reference: https://stackoverflow.com/questions/25009116/c-wrapper-function-for-sprintf-s
+void serverLog (const char* tag, char* fmt, ...)
+{
+  if(strlen(fmt) > LOG_LEN || strlen(tag) > TAG_LEN)
+  {
+    return;
+  }
+
+  char logMessage[LOG_LEN];
+  va_list va;
+  va_start (va, fmt);
+  vsprintf (logMessage, fmt, va);
+  va_end (va);
+
+  writeToLog(tag, logMessage, LOG_PATH);
+}
+
 // FUNCTION      : writeToLog
 // DESCRIPTION   : generates output for the logfile, writes to log file
 //                  using a semaphore. Calls getTime() in order to get current
@@ -39,10 +56,8 @@ void getTime(char* output)
 //                 har* path -> Path to the logfile
 //
 //  RETURNS      : void
-void writeToLog(char* logMessage, const char* path)
+void writeToLog(const char* tag, const char* logMessage, const char* path)
 {
-  createFilePathIfNotExists();
-
   //calculate the current time
   char time[TIME_LEN] = "";
   getTime(time);
@@ -51,23 +66,7 @@ void writeToLog(char* logMessage, const char* path)
   FILE * fp = fopen (path, "a");
   if(fp != NULL)
   {
-    fprintf(fp, "[%s] : %s\n", time, logMessage);
+    fprintf(fp, "[%s] [%s] - %s\n", time, tag, logMessage);
     fclose(fp);
-  }
-}
-
-// FUNCTION      : createFilePathIfNotExists
-// DESCRIPTION   : this function creates a filepath if that filepath
-//               - filepath set in #defines of header file
-//
-// PARAMETERS    :  NADA
-//
-//  RETURNS      : void
-void createFilePathIfNotExists()
-{
-  struct stat st = {0};
-  if (stat(LOG_FOLDER_PATH, &st) == -1)
-  {
-    mkdir(LOG_FOLDER_PATH, 0700);
   }
 }
