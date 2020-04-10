@@ -1,3 +1,12 @@
+/*
+*  FILE          : server.c
+*  PROJECT       : Assignment #4
+*  PROGRAMMER    : Gabriel Gurgel & Michael Gordon
+*  FIRST VERSION : 2020-04-06
+*  DESCRIPTION   : Main process loop for the server. Parses command arguments,
+*                  iniciates threads, creates message queue and share memory,
+*                  and handles the closing of the server
+*/
 #define _REENTRANT
 #include "../inc/chatServer.h"
 
@@ -22,7 +31,7 @@ int main(void)
   memset(&serverAddr, 0, sizeof(serverAddr));
   serverAddr.sin_family = AF_INET;
   serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");      // DEBUG: Server config
-  serverAddr.sin_port = htons(5000);
+  serverAddr.sin_port = htons(5568);
 
   //= Bind server config to Socket
   if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
@@ -77,7 +86,7 @@ int main(void)
       return -6;
     }
   }
-  printf("SHMID INSIDE %d\n", shmID); // DEBUG:
+
   // Grab master list
   shList = (MasterList*)shmat (shmID, NULL, 0);       // Grabs the shared memory and
   shList->msgQueueID = msgID;                         // Assign the message queue ID
@@ -93,7 +102,7 @@ int main(void)
 
   //DEBUG: = Accept client
   int clientSocket = -1;
-  clientInfo cInfo = {msgID, clientSocket, shList};
+  clientInfo cInfo = {clientSocket, shList};
 
   struct sockaddr_in client;
   int clientLen = sizeof(client);
@@ -124,7 +133,6 @@ int main(void)
 
 void closeServer(int signal_number)
 {
-  printf("Running in the close: %d\n", running  );
   key_t shmKey = ftok(SHMKEY_PATH, SHM_KEYID);
   if(shmKey == -1)
   {
@@ -132,7 +140,7 @@ void closeServer(int signal_number)
   }
   MasterList* shList = NULL;
   int shmID = shmget(shmKey, sizeof(MasterList), 0);
-  printf("SHMID INSIDE %d\n", shmID);
+
   if(shmID != -1)
   {
     MasterList* list = (MasterList*)shmat(shmID, NULL, SHM_RDONLY);

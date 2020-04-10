@@ -7,40 +7,31 @@
 *                  listenning function, and Broadcast function
 */
 // REFERENCE: The Hoochamacallit
-
 #include "../inc/chatServer.h"
-
 const int msgSize = sizeof(message) - sizeof(long);
 
-// DEBUG: This entire function is debug: implement as thread
+
 void * clientListenningThread(void* data)
 {
   // Newly accepted client info
   clientInfo* cInfo = (clientInfo*) data;
   MasterList* shList = cInfo->shList;
-  printf("--> %p Inside thread\n", shList );
 
   // Setup message
   message recMsg;
   memset(recMsg.content, 0, MSG_SIZE);
 
-  //DEBUG:----------------------------------------//
-  strcpy(recMsg.address, "192.169.0.1");
-  strcpy(recMsg.name, "Gab");
-  recMsg.type = 1;
-  int contentSize = (int) strlen(recMsg.content);
-  //----------------------------------------------//
-
   // Read first message -> Add client info to List
   read(cInfo->socket, recMsg.content, MSG_SIZE);
+  recMsg.type = 1;
+  int contentSize = (int) strlen(recMsg.content);
   int insertedAt = addClient(shList, &recMsg, cInfo->socket);
 
-  while(strcmp(recMsg.content,"quit") != 0)     // DEBUG: quit -> bye
+  // If message contains exit message -> QUIT
+  while((strstr(recMsg.content, EXIT_MSG)) == NULL)
   {
-    // Push message in the queue and write ACK back to client
-    msgsnd(cInfo->msgQueueID, (void*)&recMsg, msgSize, 0);
-
-    // Reset buffer and read next message
+    // Push message into the queue, reset buffer and read next msg
+    msgsnd(shList->msgQueueID, (void*)&recMsg, msgSize, 0);
     memset(recMsg.content, 0, MSG_SIZE);
     read(cInfo->socket, recMsg.content, MSG_SIZE);
   }
@@ -56,7 +47,6 @@ void * broadcastMessages(void* data)
   // Get client Master list
   MasterList* clientList = (MasterList*)data;
   struct msqid_ds queueInfo;
-
   message msg;
 
   while(running != FALSE)
@@ -66,7 +56,7 @@ void * broadcastMessages(void* data)
     {
       msgrcv(clientList->msgQueueID, &msg, msgSize, 1, IPC_NOWAIT);               // Take message from queue
       for(int counter = 0; counter < clientList->numberOfClients; counter++)      // Send messages to all clients
-      {                                                                           // But the one who sent the message
+      {                                                                           // DEBUG: But the one who sent the message
         write(clientList->clients[counter].socket, msg.content, strlen(msg.content));
         fflush(stdout);
       }

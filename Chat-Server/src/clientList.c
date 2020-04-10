@@ -17,20 +17,28 @@
 //	MasterList* list : Pointer to the shared memory master list
 //  message* recMsg  : Pointer to the message received by the server.
 //                     Contains client info that is going to be stored
-//                      in the server
+//                     in the server
 //
 // RETURNS       :
 //	void
 int addClient(MasterList* list, message* recMsg, int socket)
 {
   list->numberOfClients++;
-  serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
   int index = list->numberOfClients - 1;
 
-  list->clients[0].socket = socket;
-  strcpy(list->clients[0].name, recMsg->name);            // DEBUG: Change this shit
-  strcpy(list->clients[0].address, recMsg->address);
+  // Parse
+  char* username = strtok(recMsg->content, NAME_BEGIN);
+  username = strtok(NULL, NAME_END);
+  char clientAddr[IP_SIZE] = { 0 };
+  strncpy(clientAddr, recMsg->content, IP_SIZE);
 
+  // Assign client
+  list->clients[index].socket = socket;
+  strcpy(list->clients[index].address, clientAddr);
+  strcpy(list->clients[index].name, username);
+
+  serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
+  serverLog("DEBUG", "CLIENT INFO: %s -- %s", list->clients[index].name, list->clients[index].address);
   return index;
 }
 
@@ -52,17 +60,16 @@ void removeClient(MasterList* list, int delIndex)
   {
     list->clients[delIndex] = list->clients[lastIndex];
   }
+
   // Remove the last client
   list->numberOfClients--;
+  serverLog("INFO", "Client Removed - Number of Clients: %d", list->numberOfClients);
 
   // Check if server is empty
   if(list->numberOfClients == 0)
   {
-    printf("Running in remove: %d\n", running );
     serverLog("INFO", "No more clients -- CLOSING SERVER");
     running = FALSE;
-    printf("Running in after false remove: %d\n", running );
-    // Terminate server when running is turn off
-    kill(getpid(), SIGINT);
+    kill(getpid(), SIGINT);   // Terminate server
   }
 }

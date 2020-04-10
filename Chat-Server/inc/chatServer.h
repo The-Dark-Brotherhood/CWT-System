@@ -1,3 +1,11 @@
+/*
+*  FILE          : chatServer.h
+*  PROJECT       : Assignment #4
+*  PROGRAMMER    : Gabriel Gurgel & Michael Gordon
+*  FIRST VERSION : 2020-04-06
+*  DESCRIPTION   : Defines constants, functions and data structures
+*                  for the server to function
+*/
 #pragma once
 #include "../inc/logger.h"
 #include <stdio.h>
@@ -20,37 +28,36 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 
-// Volatile flag
+// Volatile flag for controlling thread
 #define TRUE    1
 #define FALSE  -1
 extern volatile char running;
 
 // Constants
 #define MAX_CLIENTS     10
-#define NUM_THREADS     2 + MAX_CLIENTS
+#define NUM_THREADS     1 + MAX_CLIENTS
 #define SHMKEY_PATH     "."
 #define KEY_PATH        "/tmp/"
 #define SHM_KEYID       16535
+#define EXIT_MSG        "bye<<"
 
 #define IP_SIZE         16
-#define MSG_SIZE        41  // DEBUG: Change later
+#define CONT_SIZE       41  // DEBUG: Change later
 #define NAME_SIZE       6   // Ni
 #define TIME_SIZE       9   // ce
+#define MSG_SIZE        IP_SIZE + CONT_SIZE + NAME_SIZE + TIME_SIZE
+#define NAME_BEGIN      "["
+#define NAME_END        "]"
 
 // Structures
-//--> Message QUEUE
 typedef struct{
   long type;
-  char address[IP_SIZE];
-  char name[NAME_SIZE];
   char content[MSG_SIZE];
-  char time[TIME_SIZE];
 } message;
 
-//--> Shared Memory
 typedef struct
 {
-  int socket;
+  int  socket;
   char address[IP_SIZE];
   char name[NAME_SIZE];
 } Client;
@@ -63,17 +70,15 @@ typedef struct
   pthread_t tid[NUM_THREADS];
 } MasterList;
 
-//--> Client info
 typedef struct
 {
-  int msgQueueID;
   int socket;
   MasterList* shList;
 } clientInfo;
 
 //= Prototypes
 void * clientListenningThread(void* data);
-void * broadcastMessages(void* data);                    
+void * broadcastMessages(void* data);
 int addClient(MasterList* shList, message* recMsg, int socket);
 void removeClient(MasterList* list, int delIndex);
 void closeServer(int signal_number);

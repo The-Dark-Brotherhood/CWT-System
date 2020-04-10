@@ -66,7 +66,7 @@ void writeToLog(const char* tag, const char* logMessage, const char* path)
   FILE * fp = fopen (path, "a");
   if(fp != NULL)
   {
-    fprintf(fp, "[%s] [%s] - %s\n", time, tag, logMessage);
+    fprintf(fp, "[%s] [%-5s] - %s\n", time, tag, logMessage);
     fclose(fp);
   }
 }
