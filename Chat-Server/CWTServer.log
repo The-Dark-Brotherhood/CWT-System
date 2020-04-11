@@ -1,0 +1,11 @@
+[2020-04-11 15:52:57] [INFO ] - Server Started Listening & Sending
+[2020-04-11 15:53:02] [INFO ] - Client Accepted - Number of Clients: 1
+[2020-04-11 15:53:02] [DEBUG] - CLIENT INFO: Sua -- 192.168.100.121
+[2020-04-11 15:53:04] [INFO ] - Client Accepted - Number of Clients: 2
+[2020-04-11 15:53:04] [DEBUG] - CLIENT INFO: Gab -- 192.168.100.121
+[2020-04-11 15:53:11] [INFO ] - Client Removed - Number of Clients: 1
+[2020-04-11 15:53:17] [INFO ] - Client Removed - Number of Clients: 0
+[2020-04-11 15:53:17] [INFO ] - No more clients -- CLOSING SERVER
+[2020-04-11 15:53:17] [DEBUG] - Server Closed
+[2020-04-11 15:54:07] [INFO ] - Server Started Listening & Sending
+[2020-04-11 15:54:10] [DEBUG] - Server Closed

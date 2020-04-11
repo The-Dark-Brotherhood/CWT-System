@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 
   server_address.sin_family = AF_INET;
   server_address.sin_addr.s_addr = inet_addr(ServerIP);
-  server_address.sin_port = htons(5566);
+  server_address.sin_port = htons(port);
 
 
   //Connect to Server

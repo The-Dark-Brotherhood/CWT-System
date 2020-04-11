@@ -171,8 +171,10 @@ int main(int argc, char const *argv[])
     // Spawn thread for listenning for clients messages
 
     int index = addClient(shList, &firstMsg, clientSocket);
+    printf("It is still --> %d\n", index );
 
     cInfo.index = index;
+    printf("Did Cinfo lost it --> %d\n", cInfo.index );
     pthread_create(&(shList->clients[index]).tid, NULL, clientListenningThread, (void *)&cInfo);
     fflush(stdout);
   }

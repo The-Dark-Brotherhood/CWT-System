@@ -15,7 +15,9 @@ void * clientListenningThread(void* data)
   // Newly accepted client info
   clientInfo* cInfo = (clientInfo*) data;
   MasterList* shList = cInfo->shList;
+  int clientIndex = cInfo->index;
 
+  printf("Cinfo still got it the thread --> %d\n", clientIndex);
   // Setup message
   message recMsg;
   memset(recMsg.content, 0, MSG_SIZE);
@@ -41,9 +43,8 @@ void * clientListenningThread(void* data)
   }
 
   // Remove from the master list and clean up
-  printf("--> Remove client\n");
-  removeClient(shList, cInfo->index);
-  close(clientSocket);
+  printf("Before Remove call -> Cinfo got? %d\n", clientIndex );
+  removeClient(shList, clientIndex);
 }
 
 
