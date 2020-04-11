@@ -49,9 +49,6 @@ void* sendMessage(void* arg)
   int addNewLine = 0;
   while(clientRunning)
   {
-
-
-    format_time(time);
     blankWin(data->outgoingWindow);
     int ret = 0;
     mvwprintw(data->outgoingWindow, 0,0, input, INPUT_MAX);
@@ -60,6 +57,7 @@ void* sendMessage(void* arg)
 
     if(ret == OK)
     {
+      format_time(time);
       blankWin(data->outgoingWindow);
 
       strcat(input, str);
@@ -101,7 +99,7 @@ void* sendMessage(void* arg)
         send(data->socket, buffer, strlen(buffer), 0);
 
         if(!strcmp(str, ">>bye<<"))
-        {
+        {          
           clientRunning = 0;
           break;
         }
@@ -114,6 +112,7 @@ void* sendMessage(void* arg)
       resizeWindows(data->outgoingWindow, data->outgoingBckgrnd, data->incomingWindow, data->incomingBckgrnd);
     }
   }
+
     return NULL;
 }
 
@@ -149,6 +148,7 @@ void* receiveMsg(void* arg)
     }
     memset(message, 0, sizeof(message));
   }
+
   return NULL;
 }
 

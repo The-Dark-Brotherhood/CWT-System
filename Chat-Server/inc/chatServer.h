@@ -48,7 +48,7 @@ extern volatile char running;
 #define CONT_SIZE       41  // DEBUG: Change later
 #define NAME_SIZE       6   // Ni
 #define TIME_SIZE       9   // ce
-#define MSG_SIZE        79
+#define MSG_SIZE        78
 #define NAME_BEGIN      "["
 #define NAME_END        "]"
 

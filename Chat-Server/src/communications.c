@@ -62,6 +62,8 @@ void * broadcastMessages(void* data)
         {
           if(list->clients[counter].socket != msg.socket)
           {
+            msg.content[24] = '<';
+            msg.content[25] = '<';
             write(list->clients[counter].socket, msg.content, strlen(msg.content));
             fflush(stdout);
           }
