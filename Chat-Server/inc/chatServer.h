@@ -25,6 +25,7 @@
 #include <sys/select.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <ifaddrs.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 
@@ -34,15 +35,10 @@
 extern volatile char running;
 
 // Constants
-#define IP_SWITCH       "-ip"
-#define PORT_SWITCH     "-port"
-#define IP_SWITCH_SIZE   3
-#define PORT_SWITCH_SIZE 5
-#define HELP_SWITCH      "-h"
-#define HELP_SWITCH_SIZE  2
+#define PORT_SWITCH       "-port"
+#define PORT_SWITCH_SIZE  5
 
 #define MAX_CLIENTS     10
-#define NUM_THREADS     1 + MAX_CLIENTS
 #define SHMKEY_PATH     "."
 #define KEY_PATH        "/tmp/"
 #define SHM_KEYID       16535
@@ -65,6 +61,7 @@ typedef struct{
 typedef struct
 {
   int  socket;
+  pthread_t tid;
   char address[IP_SIZE];
   char name[NAME_SIZE];
 } Client;
@@ -73,13 +70,13 @@ typedef struct
 {
   int msgQueueID;
   int numberOfClients;
+  pthread_t broadcastTid;
   Client clients[MAX_CLIENTS];
-  pthread_t tid[NUM_THREADS];   // Client thread will be NOT be Zero-Based
 } MasterList;
 
 typedef struct
 {
-  int socket;
+  int index;
   MasterList* shList;
 } clientInfo;
 
@@ -87,6 +84,9 @@ typedef struct
 void * clientListenningThread(void* data);
 void * broadcastMessages(void* data);
 int addClient(MasterList* shList, message* recMsg, int socket);
+int findEmptyNode(MasterList* list);
 void removeClient(MasterList* list, int delIndex);
 void closeServer(int signal_number);
 void serverShutdownSignal(MasterList* clientList);
+
+void getHostIp(char* clientIP);

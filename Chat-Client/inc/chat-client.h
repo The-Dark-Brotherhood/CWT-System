@@ -68,6 +68,7 @@ void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength
 void getClientIP(char* clientIP);
 void format_time(char *output);
 void* sendMessage(void* arg);
+void sendFirstMsg(int server, char* user);
 void* receiveMsg(void* arg);
 int splitMessage(char* message);
 int checkIfNeedNewLine(WINDOW* incomingWindow);

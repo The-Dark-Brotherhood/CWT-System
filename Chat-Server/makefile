@@ -32,6 +32,7 @@ all : ./bin/Chat-Server
 
 clean:
 	rm -f ./bin/*
+	rm -f ./CWTServer.log
 	rm -f ./obj/*.o
 	rm -f ./inc/*.h~
 	rm -f ./src/*.c~

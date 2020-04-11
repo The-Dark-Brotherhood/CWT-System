@@ -15,24 +15,25 @@
 //
 // PARAMETERS    :
 //	MasterList* list : Pointer to the shared memory master list
-//  message* recMsg  : Pointer to the message received by the server.
+//  message* firstMsg  : Pointer to the message received by the server.
 //                     Contains client info that is going to be stored
 //                     in the server
 //
 // RETURNS       :
 //	void
-int addClient(MasterList* list, message* recMsg, int socket)
+int addClient(MasterList* list, message* firstMsg, int socket)
 {
   list->numberOfClients++;
-  int index = list->numberOfClients - 1;
+  int index = findEmptyNode(list);
+  printf("Empty node %d\n", index );
 
   // Parse
   char clientAddr[IP_SIZE] = { 0 };
-  char* foundIt = strchr(recMsg->content, ' ');
-  int ipSeparator = foundIt - recMsg->content;
-  strncpy(clientAddr, recMsg->content, ipSeparator);
+  char* foundIt = strchr(firstMsg->content, ' ');
+  int ipSeparator = foundIt - firstMsg->content;
+  strncpy(clientAddr, firstMsg->content, ipSeparator);
 
-  char* username = strtok(recMsg->content, NAME_BEGIN);
+  char* username = strtok(firstMsg->content, NAME_BEGIN);
   username = strtok(NULL, NAME_END);
 
   // Assign client
@@ -43,6 +44,23 @@ int addClient(MasterList* list, message* recMsg, int socket)
   serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
   serverLog("DEBUG", "CLIENT INFO: %s -- %s", list->clients[index].name, list->clients[index].address);
   return index;
+}
+
+int findEmptyNode(MasterList* list)
+{
+  int foundIndex = -1;
+  for(int counter = 0; counter < MAX_CLIENTS; counter++ )
+  {
+    printf("|%d|\n", list->clients[counter].socket);
+    //if(list->clients[counter].socket == -1)
+    //{
+
+      //foundIndex = counter;
+      //break;
+  //  }
+  }
+
+  return foundIndex;
 }
 
 
@@ -57,12 +75,10 @@ int addClient(MasterList* list, message* recMsg, int socket)
 //	void
 void removeClient(MasterList* list, int delIndex)
 {
-	// Replace the deleted object with last element
-  int lastIndex = list->numberOfClients - 1;
-  if(lastIndex != delIndex)
-  {
-    list->clients[delIndex] = list->clients[lastIndex];
-  }
+	// Delete client
+  list->clients[delIndex].socket = -1;
+  memset(list->clients[delIndex].name, 0, NAME_SIZE);
+  memset(list->clients[delIndex].address, 0, IP_SIZE);
 
   // Remove the last client
   list->numberOfClients--;

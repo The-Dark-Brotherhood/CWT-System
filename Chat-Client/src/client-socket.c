@@ -141,7 +141,7 @@ void* receiveMsg(void* arg)
       if(!strcmp(message, SERVER_EXIT_MSG))
       {
         waddstr(data->incomingWindow, "The Server has shut down. Closing down application.\n");
-        clientRunning = 0;        
+        clientRunning = 0;
       }
       if(clientRunning)
       {
@@ -189,4 +189,15 @@ int splitMessage(char* message)
   }
   //offset index, to return number of bytes to copy in
   return retValue + 1;
+}
+
+void sendFirstMsg(int server, char* user)
+{
+  char input[INPUT_MAX+1] = "";
+  char time[TIME_SIZE] = "";
+  char clientIP[IP_SIZE] = "";
+  getClientIP(clientIP);
+  format_time(time);
+  sprintf(input, "%s [%s]", clientIP, user);
+  send(server, input , strlen(input), 0);
 }

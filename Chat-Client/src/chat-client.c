@@ -78,7 +78,8 @@ int main(int argc, char *argv[])
     printf("Error: unable to connect\n");
     return -1;
   }
-
+  // Send the message with client info
+  sendFirstMsg(sockfd, userID);
   //Create the ncurses windows.
   initscr();
   cbreak();

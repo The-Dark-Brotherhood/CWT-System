@@ -19,25 +19,24 @@ void * clientListenningThread(void* data)
   // Setup message
   message recMsg;
   memset(recMsg.content, 0, MSG_SIZE);
+  int clientSocket = shList->clients[cInfo->index].socket;
 
-  // Read first message -> Add client info to List
-  read(cInfo->socket, recMsg.content, MSG_SIZE);
+  // Read first client's message
+  read(clientSocket, recMsg.content, MSG_SIZE);
   recMsg.type = 1;
-  int insertedAt = addClient(shList, &recMsg, cInfo->socket);
 
   // If message contains exit message -> QUIT
   while((strstr(recMsg.content, EXIT_MSG)) == NULL)
   {
-    printf("Received: %s\n", recMsg.content);
     // Push message into the queue, reset buffer and read next msg
     msgsnd(shList->msgQueueID, (void*)&recMsg, MSG_SIZE, 0);
     memset(recMsg.content, 0, MSG_SIZE);
-    read(cInfo->socket, recMsg.content, MSG_SIZE);
+    read(clientSocket, recMsg.content, MSG_SIZE);
   }
 
   // Remove from the master list and clean up
-  removeClient(shList, insertedAt);
-  close(cInfo->socket);
+  //removeClient(shList, findClientbySocket(shList, cInfo->socket));
+  close(clientSocket);
 }
 
 
@@ -70,4 +69,26 @@ void serverShutdownSignal(MasterList* clientList)
     write(clientList->clients[counter].socket, EXIT_MSG, strlen(EXIT_MSG) + 1);
     fflush(stdout);
   }
+}
+
+// DEBUG:
+void getHostIp(char* clientIP)
+{
+
+  //https://stackoverflow.com/questions/4139405/how-can-i-get-to-know-the-ip-address-for-interfaces-in-c
+  struct ifaddrs *ifap, *ifa;
+  struct sockaddr_in *sa;
+  char *addr;
+  getifaddrs (&ifap);
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+      if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
+          sa = (struct sockaddr_in *) ifa->ifa_addr;
+          addr = inet_ntoa(sa->sin_addr);
+          if(!strcmp(ifa->ifa_name, "ens33"))
+          {
+            strcpy(clientIP, addr);
+          }
+      }
+  }
+  freeifaddrs(ifap);
 }
