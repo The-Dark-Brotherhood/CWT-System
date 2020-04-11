@@ -23,7 +23,16 @@
 //	void
 int addClient(MasterList* list, message* firstMsg, int socket)
 {
+  pthread_mutex_lock(&lock);
   list->numberOfClients++;
+
+  printf("Client Before Adding current Array:");
+  for(int counter = 0; counter < MAX_CLIENTS; counter++ )
+  {
+      printf("| %d |", list->clients[counter].socket);
+  }
+  printf("\n");
+
   int index = findEmptyNode(list);
 
   // Parse
@@ -43,6 +52,7 @@ int addClient(MasterList* list, message* firstMsg, int socket)
   serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
   serverLog("DEBUG", "CLIENT INFO: %s -- %s", list->clients[index].name, list->clients[index].address);
   //printf("Client: %s -- %s -- %d \n", list->clients[index].address, list->clients[index].name, list->clients[index].socket );
+  pthread_mutex_unlock(&lock);
   return index;
 }
 
@@ -73,12 +83,12 @@ int findEmptyNode(MasterList* list)
 //	void
 void removeClient(MasterList* list, int delIndex)
 {
-	// Delete client
+	// Delete client and join its thread
   list->clients[delIndex].socket = -1;
   memset(list->clients[delIndex].name, 0, NAME_SIZE);
   memset(list->clients[delIndex].address, 0, IP_SIZE);
-
-  // Remove the last client
+  pthread_join(list->clients[delIndex].tid, NULL);
+  list->clients[delIndex].tid = 0;
   list->numberOfClients--;
   serverLog("INFO", "Client Removed - Number of Clients: %d", list->numberOfClients);
 

@@ -23,11 +23,15 @@ void * clientListenningThread(void* data)
 
   // Read first client's message
   read(clientSocket, recMsg.content, MSG_SIZE);
-  printf("Rec: --> %s\n", recMsg.content);
 
   // If message contains exit message -> QUIT
-  while((strstr(recMsg.content, EXIT_MSG)) == NULL)
+  while(TRUE)
   {
+    if(strncmp((recMsg.content + OFFSET_MSG), EXIT_MSG, strlen(EXIT_MSG)) == 0)
+    {
+      break;
+    }
+
     // Push message into the queue, reset buffer and read next msg
     recMsg.type = 1;
     recMsg.socket = clientSocket;
@@ -37,6 +41,7 @@ void * clientListenningThread(void* data)
   }
 
   // Remove from the master list and clean up
+  printf("--> Remove client\n");
   removeClient(shList, cInfo->index);
   close(clientSocket);
 }
@@ -55,8 +60,8 @@ void * broadcastMessages(void* data)
     if((int)queueInfo.__msg_cbytes/msgSize > 0)     // are in the queue
     {
       int foundClients = 0;
-      msgrcv(list->msgQueueID, &msg, msgSize, 1, IPC_NOWAIT);              // Take message from queue
-      for(int counter = 0; foundClients != list->numberOfClients; counter++)      // Send messages to all clients
+      msgrcv(list->msgQueueID, &msg, msgSize, 1, IPC_NOWAIT);                 // Take message from queue
+      for(int counter = 0; foundClients != list->numberOfClients; counter++)  // Send messages to all clients
       {
         if(list->clients[counter].socket != -1)
         {
@@ -84,7 +89,6 @@ void serverShutdownSignal(MasterList* clientList)
 // DEBUG:
 void getHostIp(char* clientIP)
 {
-
   //https://stackoverflow.com/questions/4139405/how-can-i-get-to-know-the-ip-address-for-interfaces-in-c
   struct ifaddrs *ifap, *ifa;
   struct sockaddr_in *sa;

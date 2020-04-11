@@ -12,6 +12,7 @@
 
 
 volatile char running = TRUE;
+pthread_mutex_t lock;
 
 // DEBUG: Remove the debug flag in makefile
 int main(int argc, char const *argv[])
@@ -19,24 +20,31 @@ int main(int argc, char const *argv[])
   signal(SIGINT, closeServer);
   char ipAddress[IP_SIZE] = { 0 };
   getHostIp(ipAddress);
-  int port = 5000;
+  int port = 0;
+
+  if (pthread_mutex_init(&lock, NULL) != 0)
+  {
+    serverLog("ERROR", "Failed to Initialize mutex");
+    return -1;
+  }
 
   printf("-> %s\n", ipAddress );
 
   // Handle arguments
-  if(strncmp(argv[1], PORT_SWITCH, PORT_SWITCH_SIZE) == 0)
-  {
-    port = (int)strtol(argv[1] + PORT_SWITCH_SIZE, NULL, 10);
-    if(port == 0)
-    {
-      port = 5000;
-    }
-  }
-  else
+  if(argc != 2)
   {
     printf("usage: -port<port>\n");
     return -1;
   }
+  else if(strncmp(argv[1], PORT_SWITCH, PORT_SWITCH_SIZE) == 0)
+  {
+    port = (int)strtol(argv[1] + PORT_SWITCH_SIZE, NULL, 10);
+    if(port == 0)
+    {
+      printf("Not valid port\n");
+    }
+  }
+
 
   int serverSocket = -1;
   struct sockaddr_in serverAddr;
@@ -139,13 +147,19 @@ int main(int argc, char const *argv[])
   serverLog("INFO", "Server Started Listening & Sending");
 
   // Accepts client connectionServer -> Spawns a thread for listenning for that client's message
-  while(shList->numberOfClients < MAX_CLIENTS && running != FALSE)
+  while(running)
   {
     if((clientSocket = accept(serverSocket, (struct sockaddr*)&client, &clientLen)) < 0)
     {
       serverLog("ERROR", "Unexpected: Failed to accept client - CLOSING");
       // DEBUG: Put the signal to clean up the memory
       return -7;
+    }
+
+    if(shList->numberOfClients == MAX_CLIENTS)
+    {
+      write(clientSocket, EXIT_MSG, strlen(EXIT_MSG) + 1);
+      continue;
     }
 
     // Read new client info and add into the client list
@@ -155,7 +169,9 @@ int main(int argc, char const *argv[])
     fflush(stdout);
 
     // Spawn thread for listenning for clients messages
+
     int index = addClient(shList, &firstMsg, clientSocket);
+
     cInfo.index = index;
     pthread_create(&(shList->clients[index]).tid, NULL, clientListenningThread, (void *)&cInfo);
     fflush(stdout);
@@ -168,30 +184,24 @@ int main(int argc, char const *argv[])
 void closeServer(int signal_number)
 {
   running = FALSE;
-  printf("Ok you hit the interrupt\n");
   key_t shmKey = ftok(SHMKEY_PATH, SHM_KEYID);
   if(shmKey == -1)
   {
     serverLog("ERROR", "Could not get SHList Key to clean memory");
+    exit(-1);
   }
-
   int shmID = shmget(shmKey, sizeof(MasterList), 0);
   if(shmID != -1)
   {
     MasterList* list = (MasterList*)shmat(shmID, NULL, SHM_RDONLY);
     serverShutdownSignal(list);
-
-    // Join all threads
-    for (int counter = 0; counter < MAX_CLIENTS; counter++)
-    {
-      pthread_join(list->clients[counter].tid, NULL);
-    }
     pthread_join(list->broadcastTid, NULL);
 
     // Clean resources
     msgctl(list->msgQueueID, IPC_RMID, (struct msqid_ds*)NULL);
     shmdt(list);
     shmctl(shmID, IPC_RMID, 0);
+    pthread_mutex_destroy(&lock);
     serverLog("DEBUG", "Server Closed");
   }
   else
@@ -200,5 +210,5 @@ void closeServer(int signal_number)
   }
 
   // Terminate
-	exit(1);
+	exit(0);
 }

@@ -33,22 +33,24 @@
 #define TRUE    1
 #define FALSE  -1
 extern volatile char running;
+extern pthread_mutex_t lock;
 
 // Constants
 #define PORT_SWITCH       "-port"
 #define PORT_SWITCH_SIZE  5
 
-#define MAX_CLIENTS     10
+#define MAX_CLIENTS     3
 #define SHMKEY_PATH     "."
 #define KEY_PATH        "/tmp/"
 #define SHM_KEYID       16535
 #define EXIT_MSG        ">>bye<<"
+#define OFFSET_MSG      27
 
 #define IP_SIZE         16
 #define CONT_SIZE       41  // DEBUG: Change later
 #define NAME_SIZE       6   // Ni
 #define TIME_SIZE       9   // ce
-#define MSG_SIZE        79
+#define MSG_SIZE        78
 #define NAME_BEGIN      "["
 #define NAME_END        "]"
 
