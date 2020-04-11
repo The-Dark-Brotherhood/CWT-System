@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     printf("Error: unable to connect\n");
     return -1;
   }
-
+y
   //Create the ncurses windows.
   initscr();
   cbreak();

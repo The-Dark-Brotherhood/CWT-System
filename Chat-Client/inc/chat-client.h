@@ -4,7 +4,7 @@
 *  PROGRAMMER    : Gabriel Gurgel, Michael Gordon
 *  FIRST VERSION : 2020-03-27
 *  DESCRIPTION   : Contains the include for the common include file, global constant defines,
-*                  global variable extern, and function prototypes
+*                  global variable externyand function prototypes
 */
 
 #pragma once
