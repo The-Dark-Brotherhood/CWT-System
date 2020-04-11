@@ -8,6 +8,7 @@
 */
 // REFERENCE: The Hoochamacallit
 #include "../inc/chatServer.h"
+const int msgSize = sizeof(message) - sizeof(long);
 
 void * clientListenningThread(void* data)
 {
@@ -30,7 +31,7 @@ void * clientListenningThread(void* data)
     // Push message into the queue, reset buffer and read next msg
     recMsg.type = 1;
     recMsg.socket = clientSocket;
-    msgsnd(shList->msgQueueID, (void*)&recMsg, MSG_SIZE + sizeof(int), 0);
+    msgsnd(shList->msgQueueID, (void*)&recMsg, msgSize, 0);
     memset(recMsg.content, 0, MSG_SIZE);
     read(clientSocket, recMsg.content, MSG_SIZE);
   }
@@ -51,10 +52,10 @@ void * broadcastMessages(void* data)
   while(running != FALSE)
   {
     msgctl(list->msgQueueID, IPC_STAT, &queueInfo); // Check how many messages
-    if((int)queueInfo.__msg_cbytes/MSG_SIZE > 0)           // are in the queue
+    if((int)queueInfo.__msg_cbytes/msgSize > 0)     // are in the queue
     {
       int foundClients = 0;
-      msgrcv(list->msgQueueID, &msg, MSG_SIZE, 1, IPC_NOWAIT);              // Take message from queue
+      msgrcv(list->msgQueueID, &msg, msgSize, 1, IPC_NOWAIT);              // Take message from queue
       for(int counter = 0; foundClients != list->numberOfClients; counter++)      // Send messages to all clients
       {
         if(list->clients[counter].socket != -1)
