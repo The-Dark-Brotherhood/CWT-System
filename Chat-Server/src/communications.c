@@ -9,7 +9,6 @@
 // REFERENCE: The Hoochamacallit
 #include "../inc/chatServer.h"
 
-
 void * clientListenningThread(void* data)
 {
   // Newly accepted client info
@@ -23,19 +22,21 @@ void * clientListenningThread(void* data)
 
   // Read first client's message
   read(clientSocket, recMsg.content, MSG_SIZE);
-  recMsg.type = 1;
+  printf("Rec: --> %s\n", recMsg.content);
 
   // If message contains exit message -> QUIT
   while((strstr(recMsg.content, EXIT_MSG)) == NULL)
   {
     // Push message into the queue, reset buffer and read next msg
-    msgsnd(shList->msgQueueID, (void*)&recMsg, MSG_SIZE, 0);
+    recMsg.type = 1;
+    recMsg.socket = clientSocket;
+    msgsnd(shList->msgQueueID, (void*)&recMsg, MSG_SIZE + sizeof(int), 0);
     memset(recMsg.content, 0, MSG_SIZE);
     read(clientSocket, recMsg.content, MSG_SIZE);
   }
 
   // Remove from the master list and clean up
-  //removeClient(shList, findClientbySocket(shList, cInfo->socket));
+  removeClient(shList, cInfo->index);
   close(clientSocket);
 }
 
@@ -43,20 +44,28 @@ void * clientListenningThread(void* data)
 void * broadcastMessages(void* data)
 {
   // Get client Master list
-  MasterList* clientList = (MasterList*)data;
+  MasterList* list = (MasterList*)data;
   struct msqid_ds queueInfo;
   message msg;
 
   while(running != FALSE)
   {
-    msgctl(clientList->msgQueueID, IPC_STAT, &queueInfo); // Check how many messages
+    msgctl(list->msgQueueID, IPC_STAT, &queueInfo); // Check how many messages
     if((int)queueInfo.__msg_cbytes/MSG_SIZE > 0)           // are in the queue
     {
-      msgrcv(clientList->msgQueueID, &msg, MSG_SIZE, 1, IPC_NOWAIT);               // Take message from queue
-      for(int counter = 0; counter < clientList->numberOfClients; counter++)      // Send messages to all clients
-      {                                                                           // DEBUG: But the one who sent the message
-        write(clientList->clients[counter].socket, msg.content, strlen(msg.content));
-        fflush(stdout);
+      int foundClients = 0;
+      msgrcv(list->msgQueueID, &msg, MSG_SIZE, 1, IPC_NOWAIT);              // Take message from queue
+      for(int counter = 0; foundClients != list->numberOfClients; counter++)      // Send messages to all clients
+      {
+        if(list->clients[counter].socket != -1)
+        {
+          if(list->clients[counter].socket != msg.socket)
+          {
+            write(list->clients[counter].socket, msg.content, strlen(msg.content));
+            fflush(stdout);
+          }
+          foundClients++;
+        }
       }
     }
   }

@@ -111,5 +111,16 @@ void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength
 
   *cursorY = (stringLength/x);
   *cursorX = (stringLength%x);
+}
 
+int checkIfNeedNewLine(WINDOW* incomingWindow)
+{
+  int windowX = 0;
+  int windowY = 0;
+  getmaxyx(incomingWindow, windowY, windowX);
+  if(windowX > MESSAGE_SIZE)
+  {
+    return 1;
+  }
+  return 0;
 }

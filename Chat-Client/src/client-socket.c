@@ -34,19 +34,6 @@ void format_time(char *output)
 
 }
 
-int checkIfNeedNewLine(WINDOW* incomingWindow)
-{
-  int windowX = 0;
-  int windowY = 0;
-  getmaxyx(incomingWindow, windowY, windowX);
-  if(windowX > MAX_CHAR_PER_MSG)
-  {
-    return 1;
-  }
-  return 0;
-}
-
-
 void* sendMessage(void* arg)
 {
   int x = 0;
@@ -76,47 +63,50 @@ void* sendMessage(void* arg)
       blankWin(data->outgoingWindow);
 
       strcat(input, str);
-      char outgoingMsg[MESSAGE_SIZE] = "";
-      char* ps = input;
-      if(strlen(input) > MAX_CHAR_PER_MSG)
+      if(strlen(input) > 0)
       {
-        int index = splitMessage(input);
-        char firstMsg[MAX_CHAR_PER_MSG+1] = "";
-        strncpy(firstMsg, input, index);
-        sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, firstMsg, time);
-        waddstr(data->incomingWindow, outgoingMsg);
+        char outgoingMsg[MESSAGE_SIZE] = "";
+        char* ps = input;
+        if(strlen(input) > MAX_CHAR_PER_MSG)
+        {
+          int index = splitMessage(input);
+          char firstMsg[MAX_CHAR_PER_MSG+1] = "";
+          strncpy(firstMsg, input, index);
+          sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, firstMsg, time);
+          waddstr(data->incomingWindow, outgoingMsg);
 
+          if (checkIfNeedNewLine(data->outgoingWindow))
+          {
+            waddstr(data->incomingWindow,"\n");
+          }
+          wrefresh(data->incomingWindow);
+          //DEBUG
+          char buffer[2048] = {};
+          strcpy(buffer, outgoingMsg);
+          send(data->socket, buffer, strlen(buffer), 0);
+          ps += index;
+        }
+        sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, ps, time);
+
+        waddstr(data->incomingWindow, outgoingMsg);
         if (checkIfNeedNewLine(data->outgoingWindow))
         {
           waddstr(data->incomingWindow,"\n");
         }
         wrefresh(data->incomingWindow);
+
         //DEBUG
         char buffer[2048] = {};
         strcpy(buffer, outgoingMsg);
         send(data->socket, buffer, strlen(buffer), 0);
-        ps += index;
-      }
-      sprintf(outgoingMsg, "%-15s [%-5s] >> %-40s (%s)", clientIP, data->userName, ps, time);
 
-      waddstr(data->incomingWindow, outgoingMsg);
-      if (checkIfNeedNewLine(data->outgoingWindow))
-      {
-        waddstr(data->incomingWindow,"\n");
+        if(!strcmp(str, ">>bye<<"))
+        {
+          clientRunning = 0;
+          break;
+        }
+        input[0] = 0;
       }
-      wrefresh(data->incomingWindow);
-
-      //DEBUG
-      char buffer[2048] = {};
-      strcpy(buffer, outgoingMsg);
-      send(data->socket, buffer, strlen(buffer), 0);
-
-      if(!strcmp(str, ">>bye<<"))
-      {
-        clientRunning = 0;
-        break;
-      }
-      input[0] = 0;
     }
     else if(ret == KEY_RESIZE)
     {

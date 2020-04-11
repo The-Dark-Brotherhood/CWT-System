@@ -55,6 +55,7 @@ extern volatile char running;
 // Structures
 typedef struct{
   long type;
+  int socket;
   char content[MSG_SIZE];
 } message;
 

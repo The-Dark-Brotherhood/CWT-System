@@ -112,8 +112,11 @@ int main(int argc, char const *argv[])
   shList = (MasterList*)shmat (shmID, NULL, 0);       // Grabs the shared memory and
   shList->msgQueueID = msgID;                         // Assign the message queue ID
   shList->numberOfClients = 0;
-  Client blankClient = {-1 , 0, { 0 }, { 0 }};         // Initialize clients to the same value
-  shList->clients[MAX_CLIENTS] = blankClient;
+  Client blankClient = {-1 , -1, { -1 }, { -1 }};         // Initialize clients to the same value
+  for(int counter = 0; counter < MAX_CLIENTS; counter++)
+  {
+    shList->clients[counter] = blankClient;
+  }
 
   //= Listen for connections
   if(listen(serverSocket, 5) < 0)
@@ -136,7 +139,7 @@ int main(int argc, char const *argv[])
   serverLog("INFO", "Server Started Listening & Sending");
 
   // Accepts client connectionServer -> Spawns a thread for listenning for that client's message
-  //while(shList->numberOfClients < MAX_CLIENTS && running != FALSE)
+  while(shList->numberOfClients < MAX_CLIENTS && running != FALSE)
   {
     if((clientSocket = accept(serverSocket, (struct sockaddr*)&client, &clientLen)) < 0)
     {
@@ -149,13 +152,12 @@ int main(int argc, char const *argv[])
     message firstMsg;
     memset(firstMsg.content, 0, MSG_SIZE);
     read(clientSocket, firstMsg.content, MSG_SIZE);
-    printf("----> %s\n", firstMsg.content );
     fflush(stdout);
 
     // Spawn thread for listenning for clients messages
     int index = addClient(shList, &firstMsg, clientSocket);
     cInfo.index = index;
-    //pthread_create(&(shList->clients[index].tid), NULL, clientListenningThread, (void *)cInfo);
+    pthread_create(&(shList->clients[index]).tid, NULL, clientListenningThread, (void *)&cInfo);
     fflush(stdout);
   }
 
@@ -180,11 +182,11 @@ void closeServer(int signal_number)
     serverShutdownSignal(list);
 
     // Join all threads
-    //for (int counter = 0; counter < MAX_CLIENTS; counter++)
-    //{
-    //  pthread_join(list->tid[counter], NULL);
-    //}
-    //pthread_join(list->broadcastTid, NULL);
+    for (int counter = 0; counter < MAX_CLIENTS; counter++)
+    {
+      pthread_join(list->clients[counter].tid, NULL);
+    }
+    pthread_join(list->broadcastTid, NULL);
 
     // Clean resources
     msgctl(list->msgQueueID, IPC_RMID, (struct msqid_ds*)NULL);

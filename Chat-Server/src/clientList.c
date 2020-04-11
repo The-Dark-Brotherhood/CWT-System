@@ -25,7 +25,6 @@ int addClient(MasterList* list, message* firstMsg, int socket)
 {
   list->numberOfClients++;
   int index = findEmptyNode(list);
-  printf("Empty node %d\n", index );
 
   // Parse
   char clientAddr[IP_SIZE] = { 0 };
@@ -43,6 +42,7 @@ int addClient(MasterList* list, message* firstMsg, int socket)
 
   serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
   serverLog("DEBUG", "CLIENT INFO: %s -- %s", list->clients[index].name, list->clients[index].address);
+  //printf("Client: %s -- %s -- %d \n", list->clients[index].address, list->clients[index].name, list->clients[index].socket );
   return index;
 }
 
@@ -51,13 +51,11 @@ int findEmptyNode(MasterList* list)
   int foundIndex = -1;
   for(int counter = 0; counter < MAX_CLIENTS; counter++ )
   {
-    printf("|%d|\n", list->clients[counter].socket);
-    //if(list->clients[counter].socket == -1)
-    //{
-
-      //foundIndex = counter;
-      //break;
-  //  }
+    if(list->clients[counter].socket == -1)
+    {
+      foundIndex = counter;
+      break;
+    }
   }
 
   return foundIndex;
