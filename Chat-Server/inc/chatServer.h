@@ -46,13 +46,13 @@ extern volatile char running;
 #define SHMKEY_PATH     "."
 #define KEY_PATH        "/tmp/"
 #define SHM_KEYID       16535
-#define EXIT_MSG        "bye<<"
+#define EXIT_MSG        ">>bye<<"
 
 #define IP_SIZE         16
 #define CONT_SIZE       41  // DEBUG: Change later
 #define NAME_SIZE       6   // Ni
 #define TIME_SIZE       9   // ce
-#define MSG_SIZE        IP_SIZE + CONT_SIZE + NAME_SIZE + TIME_SIZE
+#define MSG_SIZE        79
 #define NAME_BEGIN      "["
 #define NAME_END        "]"
 
@@ -74,7 +74,7 @@ typedef struct
   int msgQueueID;
   int numberOfClients;
   Client clients[MAX_CLIENTS];
-  pthread_t tid[NUM_THREADS];
+  pthread_t tid[NUM_THREADS];   // Client thread will be NOT be Zero-Based
 } MasterList;
 
 typedef struct
@@ -89,3 +89,4 @@ void * broadcastMessages(void* data);
 int addClient(MasterList* shList, message* recMsg, int socket);
 void removeClient(MasterList* list, int delIndex);
 void closeServer(int signal_number);
+void serverShutdownSignal(MasterList* clientList);

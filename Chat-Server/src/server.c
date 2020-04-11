@@ -138,7 +138,7 @@ int main(int argc, char const *argv[])
   serverLog("INFO", "Server Started Listening & Sending");
 
   // Accepts client connectionServer -> Spawns a thread for listenning for that client's message
-  while(shList->numberOfClients <= MAX_CLIENTS)
+  while(shList->numberOfClients < MAX_CLIENTS)
   {
     if((clientSocket = accept(serverSocket, (struct sockaddr*)&client, &clientLen)) < 0)
     {
@@ -149,27 +149,28 @@ int main(int argc, char const *argv[])
 
     // Spawn thread for listenning for clients messages
     cInfo.socket = clientSocket;
-    pthread_create(&shList->tid[1], NULL, clientListenningThread, (void *)&cInfo);
+    pthread_create(&shList->tid[shList->numberOfClients], NULL, clientListenningThread, (void *)&cInfo);
     fflush(stdout);
   }
 
+  // DEBUG: If number of clients reach 10 does this get executed?
   return 0;
 }
 
 void closeServer(int signal_number)
 {
+  running = FALSE;
   key_t shmKey = ftok(SHMKEY_PATH, SHM_KEYID);
   if(shmKey == -1)
   {
     serverLog("ERROR", "Could not get SHList Key to clean memory");
   }
-  MasterList* shList = NULL;
-  int shmID = shmget(shmKey, sizeof(MasterList), 0);
 
+  int shmID = shmget(shmKey, sizeof(MasterList), 0);
   if(shmID != -1)
   {
     MasterList* list = (MasterList*)shmat(shmID, NULL, SHM_RDONLY);
-    printf("--> %p (Closing)\n", list);
+    serverShutdownSignal(list);
 
     // Join all threads
     for (int counter = 0; counter < NUM_THREADS; counter++)

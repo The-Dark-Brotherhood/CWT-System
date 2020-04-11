@@ -27,10 +27,13 @@ int addClient(MasterList* list, message* recMsg, int socket)
   int index = list->numberOfClients - 1;
 
   // Parse
+  char clientAddr[IP_SIZE] = { 0 };
+  char* foundIt = strchr(recMsg->content, ' ');
+  int ipSeparator = foundIt - recMsg->content;
+  strncpy(clientAddr, recMsg->content, ipSeparator);
+
   char* username = strtok(recMsg->content, NAME_BEGIN);
   username = strtok(NULL, NAME_END);
-  char clientAddr[IP_SIZE] = { 0 };
-  strncpy(clientAddr, recMsg->content, IP_SIZE);
 
   // Assign client
   list->clients[index].socket = socket;

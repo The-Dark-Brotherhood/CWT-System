@@ -8,7 +8,6 @@
 */
 // REFERENCE: The Hoochamacallit
 #include "../inc/chatServer.h"
-const int msgSize = sizeof(message) - sizeof(long);
 
 
 void * clientListenningThread(void* data)
@@ -24,7 +23,6 @@ void * clientListenningThread(void* data)
   // Read first message -> Add client info to List
   read(cInfo->socket, recMsg.content, MSG_SIZE);
   recMsg.type = 1;
-  int contentSize = (int) strlen(recMsg.content);
   int insertedAt = addClient(shList, &recMsg, cInfo->socket);
 
   // If message contains exit message -> QUIT
@@ -32,7 +30,7 @@ void * clientListenningThread(void* data)
   {
     printf("Received: %s\n", recMsg.content);
     // Push message into the queue, reset buffer and read next msg
-    msgsnd(shList->msgQueueID, (void*)&recMsg, msgSize, 0);
+    msgsnd(shList->msgQueueID, (void*)&recMsg, MSG_SIZE, 0);
     memset(recMsg.content, 0, MSG_SIZE);
     read(cInfo->socket, recMsg.content, MSG_SIZE);
   }
@@ -53,14 +51,23 @@ void * broadcastMessages(void* data)
   while(running != FALSE)
   {
     msgctl(clientList->msgQueueID, IPC_STAT, &queueInfo); // Check how many messages
-    if((int)queueInfo.__msg_cbytes/msgSize > 0)           // are in the queue
+    if((int)queueInfo.__msg_cbytes/MSG_SIZE > 0)           // are in the queue
     {
-      msgrcv(clientList->msgQueueID, &msg, msgSize, 1, IPC_NOWAIT);               // Take message from queue
+      msgrcv(clientList->msgQueueID, &msg, MSG_SIZE, 1, IPC_NOWAIT);               // Take message from queue
       for(int counter = 0; counter < clientList->numberOfClients; counter++)      // Send messages to all clients
       {                                                                           // DEBUG: But the one who sent the message
         write(clientList->clients[counter].socket, msg.content, strlen(msg.content));
         fflush(stdout);
       }
     }
+  }
+}
+
+void serverShutdownSignal(MasterList* clientList)
+{
+  for(int counter = 0; counter < clientList->numberOfClients; counter++)
+  {
+    write(clientList->clients[counter].socket, EXIT_MSG, strlen(EXIT_MSG) + 1);
+    fflush(stdout);
   }
 }
