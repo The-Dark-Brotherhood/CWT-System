@@ -14,9 +14,34 @@
 volatile char running = TRUE;
 
 // DEBUG: Remove the debug flag in makefile
-int main(void)
+int main(int argc, char const *argv[])
 {
   signal(SIGINT, closeServer);
+  char ipAddress[IP_SIZE] = "127.0.0.1";
+  int port = 5000;
+
+  // Handle arguments
+  for(int counter = 1; counter < argc; counter++)
+  {
+    if(strncmp(argv[counter], IP_SWITCH, IP_SWITCH_SIZE) == 0)
+    {
+      strcpy(ipAddress, argv[counter] + IP_SWITCH_SIZE);
+    }
+    else if(strncmp(argv[counter], PORT_SWITCH, PORT_SWITCH_SIZE) == 0)
+    {
+      port = (int)strtol(argv[counter] + PORT_SWITCH_SIZE, NULL, 10);
+      if(port == 0)
+      {
+        port = 5000;
+      }
+    }
+    else if(strncmp(argv[counter], HELP_SWITCH, HELP_SWITCH_SIZE) == 0)
+    {
+      printf("usage: -ip<address> -port<port>\n");
+      return -1;
+    }
+  }
+
   int serverSocket = -1;
   struct sockaddr_in serverAddr;
 
@@ -30,8 +55,8 @@ int main(void)
   //= Set up server configuration
   memset(&serverAddr, 0, sizeof(serverAddr));
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");      // DEBUG: Server config
-  serverAddr.sin_port = htons(5568);
+  serverAddr.sin_addr.s_addr = inet_addr(ipAddress);      // DEBUG: Server config
+  serverAddr.sin_port = htons(port);
 
   //= Bind server config to Socket
   if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)

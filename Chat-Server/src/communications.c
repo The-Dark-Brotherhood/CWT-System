@@ -30,6 +30,7 @@ void * clientListenningThread(void* data)
   // If message contains exit message -> QUIT
   while((strstr(recMsg.content, EXIT_MSG)) == NULL)
   {
+    printf("Received: %s\n", recMsg.content);
     // Push message into the queue, reset buffer and read next msg
     msgsnd(shList->msgQueueID, (void*)&recMsg, msgSize, 0);
     memset(recMsg.content, 0, MSG_SIZE);

@@ -34,6 +34,13 @@
 extern volatile char running;
 
 // Constants
+#define IP_SWITCH       "-ip"
+#define PORT_SWITCH     "-port"
+#define IP_SWITCH_SIZE   3
+#define PORT_SWITCH_SIZE 5
+#define HELP_SWITCH      "-h"
+#define HELP_SWITCH_SIZE  2
+
 #define MAX_CLIENTS     10
 #define NUM_THREADS     1 + MAX_CLIENTS
 #define SHMKEY_PATH     "."
