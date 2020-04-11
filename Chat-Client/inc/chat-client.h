@@ -49,6 +49,7 @@ extern int clientRunning;
 #define INNER_WINDOW_STARTING_X     1
 #define USER_FLAG_LENGTH            5
 #define SERVER_FLAG_LENGTH          7
+#define PORT_FLAG_LENGTH            5
 #define SERVER_EXIT_MSG             ">>bye<<"
 
 

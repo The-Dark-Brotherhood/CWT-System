@@ -10,10 +10,11 @@ int main(int argc, char *argv[])
 {
   struct sockaddr_in server_address;
   struct hostent* host;
-  int my_server_socket;
+  int my_server_socket = 0;
   int wrongUsage = 0;
+  unsigned short port = 0;
 
-  if (argc != 3)
+  if (argc != 4)
   {
     wrongUsage = 1;
   }
@@ -25,12 +26,16 @@ int main(int argc, char *argv[])
   {
     wrongUsage = 1;
   }
+  else if(strncmp("-port", argv[3], PORT_FLAG_LENGTH))
+  {
+    wrongUsage = 1;
+  }
 
 
 
   if(wrongUsage)
   {
-    printf ("USAGE : chat-client -user<userID> -server<server name>\n");
+    printf ("USAGE : chat-client -user<userID> -server<server name> -port<port>\n");
     return 1;
   }
   if(strlen(argv[1]+USER_FLAG_LENGTH) > NAME_SIZE || strlen(argv[1]+USER_FLAG_LENGTH) < 1)
@@ -52,6 +57,13 @@ int main(int argc, char *argv[])
     return 3;
   }
 
+  if ((!sscanf((argv[3]+PORT_FLAG_LENGTH), "%hu", &port))||strlen(argv[3]) == PORT_FLAG_LENGTH)
+  {
+    printf("Invalid port value\n");
+    return 4;
+  }
+
+
   int sockfd = 0;
 
   if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0)
@@ -68,14 +80,14 @@ int main(int argc, char *argv[])
 
   server_address.sin_family = AF_INET;
   server_address.sin_addr.s_addr = inet_addr(ServerIP);
-  server_address.sin_port = htons(5568);
+  server_address.sin_port = htons(5566);
 
 
   //Connect to Server
   int err = connect(sockfd, (struct sockaddr *)&server_address, sizeof(server_address));
   if (err == -1)
   {
-    printf("Error: unable to connect\n");
+    printf("Error: unable to connect to the Chat Server\n");
     return -1;
   }
   // Send the message with client info
