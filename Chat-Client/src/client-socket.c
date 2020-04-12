@@ -93,13 +93,16 @@ void* sendMessage(void* arg)
         }
         wrefresh(data->incomingWindow);
 
-        //DEBUG
         char buffer[2048] = {};
         strcpy(buffer, outgoingMsg);
         send(data->socket, buffer, strlen(buffer), 0);
 
-        if(!strcmp(str, ">>bye<<"))
-        {          
+        if(!strcmp(str, EXIT_MSG))
+        {
+          if(clientRunning)
+          {
+            data->exitStatus = USER_SHUTDOWN;
+          }
           clientRunning = 0;
           break;
         }
@@ -127,9 +130,9 @@ void* receiveMsg(void* arg)
     int receive = recv(data->socket, message, INPUT_MAX+1, 0);
     if (receive > 0)
     {
-      if(!strcmp(message, SERVER_EXIT_MSG))
+      if(!strcmp(message, EXIT_MSG))
       {
-        waddstr(data->incomingWindow, "The Server has shut down. Closing down application.\n");
+        data->exitStatus = SERVER_SHUTDOWN;
         clientRunning = 0;
       }
       if(clientRunning)
@@ -144,6 +147,10 @@ void* receiveMsg(void* arg)
     }
     else if (receive == 0)
     {
+      if(clientRunning)
+      {
+      data->exitStatus = NO_SERVER_RESPONSE;
+      }
       clientRunning = 0;
     }
     memset(message, 0, sizeof(message));
@@ -158,7 +165,7 @@ int splitMessage(char* message)
 {
   int retValue = 0;
   int length = strlen(message);
-  int middle = MAX_CHAR_PER_MSG;
+  int middle = MAX_CHAR_PER_MSG-1;
   int distanceRight = 0;
   int i = middle;
   int distanceLeft = 0;

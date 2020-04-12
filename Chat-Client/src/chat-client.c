@@ -1,16 +1,17 @@
-#include "../inc/chat-client.h"
+/*
+*  FILE          : chat-client.c
+*  PROJECT       : Assignment #4 - Can We Talk?
+*  PROGRAMMER    : Gabriel Gurgel, Michael Gordon
+*  FIRST VERSION : 2020-03-27
+*  DESCRIPTION   :
+*/
 
-//Recommended to take in arguments for user and server
+#include "../inc/chat-client.h"
 
 int clientRunning = 1;
 
-//DEBUG: change to pass into function
-
 int main(int argc, char *argv[])
 {
-  struct sockaddr_in server_address;
-  struct hostent* host;
-  int my_server_socket = 0;
   int wrongUsage = 0;
   unsigned short port = 0;
 
@@ -51,6 +52,9 @@ int main(int argc, char *argv[])
   /*
    * determine host info for server name supplied
    */
+
+   struct hostent* host;
+
   if ((host = gethostbyname(argv[2]+SERVER_FLAG_LENGTH)) == NULL)
   {
     printf ("Failed to get host by name\n");
@@ -63,21 +67,17 @@ int main(int argc, char *argv[])
     return 4;
   }
 
-
   int sockfd = 0;
-
+  //Get the socket
   if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0)
   {
    printf ("Failed to get socket\n");
    return 4;
   }
 
-  //Connect to the server
-
   //Socket settings
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
   char *ServerIP = inet_ntoa(*((struct in_addr*)host->h_addr_list[0]));
-
+  struct sockaddr_in server_address;
   server_address.sin_family = AF_INET;
   server_address.sin_addr.s_addr = inet_addr(ServerIP);
   server_address.sin_port = htons(port);
@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
   }
   // Send the message with client info
   sendFirstMsg(sockfd, userID);
+
   //Create the ncurses windows.
   initscr();
   cbreak();
@@ -128,16 +129,18 @@ int main(int argc, char *argv[])
 
   */
 
-  //Window dimensions are set using % in order to add some responsivity
-  //to the application
+  //Set up the 4 windows. Dimensions established in the resizeWindows() function
   WINDOW *msgWinBackground = newwin(0,0,0,0);
   WINDOW *msgWin = newwin(0,0,0,0);
+
+  //enable scrolling for the incoming messaged Window:
   scrollok(msgWin, TRUE);
   WINDOW *txtBoxBackground = newwin(0,0,0,0);
   WINDOW *txtBoxWin = newwin(0,0,0,0);
 
   //Set the windows height/width and x,y placement
   resizeWindows(txtBoxWin, txtBoxBackground, msgWin, msgWinBackground);
+
   //Set the colors, draw the boxes, write the box titles
   setUpWindows(txtBoxWin, txtBoxBackground, msgWin, msgWinBackground);
 
@@ -148,7 +151,8 @@ int main(int argc, char *argv[])
     .incomingWindow = msgWin,
     .incomingBckgrnd = msgWinBackground,
     .userName = userID,
-    .socket = sockfd
+    .socket = sockfd,
+    .exitStatus = 0
   };
 
   //Create the thread responsible for receiving messages from the server
@@ -178,6 +182,18 @@ int main(int argc, char *argv[])
   delwin(msgWinBackground);
   delwin(txtBoxWin);
   endwin();
+
+  switch(args.exitStatus)
+  {
+    case NO_SERVER_RESPONSE:
+      printf("No Response from the Server\n");
+      break;
+    case SERVER_SHUTDOWN:
+      printf("Server has shutdown. Closing application\n");
+      break;
+    case USER_SHUTDOWN:
+      printf("Exit message sent[>>bye<<]. Application closing.\n");
+  }
   return 0;
 
 }
