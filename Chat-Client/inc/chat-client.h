@@ -50,7 +50,10 @@ extern int clientRunning;
 #define USER_FLAG_LENGTH            5
 #define SERVER_FLAG_LENGTH          7
 #define PORT_FLAG_LENGTH            5
-#define SERVER_EXIT_MSG             ">>bye<<"
+#define EXIT_MSG                    ">>bye<<"
+#define NO_SERVER_RESPONSE          1
+#define SERVER_SHUTDOWN             2
+#define USER_SHUTDOWN               3
 
 
 typedef struct {
@@ -60,6 +63,7 @@ typedef struct {
     WINDOW* incomingBckgrnd;
     char* userName;
     int socket;
+    int exitStatus;
 } SendThreadArgs;
 
 void blankWin(WINDOW *win);

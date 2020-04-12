@@ -82,7 +82,7 @@ void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWin
   wresize(winBg, (y/TXT_BOX_HEIGHT_RATIO+BCKGRND_PADDING_OFFSET), x);
   wresize(win,y/TXT_BOX_HEIGHT_RATIO, x-2);
 
-  mvwin(msgWindow, 0, 0);
+  mvwin(msgWindowBackground, 0, BCKGRND_STARTING_X);
   mvwin(msgWindow, 2, 1);
   mvwin(win,(y-(y/TXT_BOX_HEIGHT_RATIO+1)),1 );
   mvwin(winBg,(y-(y/TXT_BOX_HEIGHT_RATIO+3)),0);
@@ -118,7 +118,7 @@ int checkIfNeedNewLine(WINDOW* incomingWindow)
   int windowX = 0;
   int windowY = 0;
   getmaxyx(incomingWindow, windowY, windowX);
-  if(windowX > MESSAGE_SIZE)
+  if(windowX != MESSAGE_SIZE-1)
   {
     return 1;
   }
