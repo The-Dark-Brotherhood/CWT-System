@@ -20,8 +20,7 @@ int main(int argc, char const *argv[])
 {
   // Set up interrupt handler and config info
   signal(SIGINT, closeServer);
-  char ipAddress[IP_SIZE] = { 0 };
-  getHostIp(ipAddress);
+  char hostname[HOST_LEN] = { 0 };
   int port = 0;
   if (pthread_mutex_init(&lock, NULL) != 0)
   {
@@ -43,6 +42,11 @@ int main(int argc, char const *argv[])
       printf("Not valid port\n");
     }
   }
+  
+  gethostname(hostname, HOST_LEN);
+  struct hostent* host;
+  host = gethostbyname(hostname);
+  char* serverIP = inet_ntoa(*((struct in_addr*)host->h_addr_list[0]));
 
   //= Create server socket
   int serverSocket = -1;
@@ -56,7 +60,7 @@ int main(int argc, char const *argv[])
   //= Set up server configuration
   memset(&serverAddr, 0, sizeof(serverAddr));
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_addr.s_addr = inet_addr(ipAddress);      // DEBUG: Server config
+  serverAddr.sin_addr.s_addr = inet_addr(serverIP);      // DEBUG: Server config
   serverAddr.sin_port = htons(port);
 
   //= Bind server config to Socket

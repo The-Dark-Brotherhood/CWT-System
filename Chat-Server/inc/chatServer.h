@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <signal.h>
@@ -45,6 +46,7 @@ extern pthread_mutex_t lock;
 #define OFFSET_MSG      27
 
 #define IP_SIZE         16
+#define HOST_LEN        64
 #define NAME_SIZE       6   // Ni
 #define TIME_SIZE       9   // ce
 #define MSG_SIZE        78
@@ -88,5 +90,4 @@ int findEmptyNode(MasterList* list);
 void removeClient(MasterList* list, int delIndex);
 void closeServer(int signal_number);
 void serverShutdownSignal(MasterList* clientList);
-
 void getHostIp(char* clientIP);
