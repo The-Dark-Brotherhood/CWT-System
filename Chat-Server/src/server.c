@@ -6,6 +6,8 @@
 *  DESCRIPTION   : Main process loop for the server. Parses command arguments,
 *                  iniciates threads, creates message queue and share memory,
 *                  and handles the closing of the server
+* REFERNCES:
+*   Hoochamacalit -> Assignment #3 - by Gabriel Gurgel and Michael Gordon
 */
 #define _REENTRANT
 #include "../inc/chatServer.h"
@@ -14,21 +16,18 @@
 volatile char running = TRUE;
 pthread_mutex_t lock;
 
-// DEBUG: Remove the debug flag in makefile
 int main(int argc, char const *argv[])
 {
+  // Set up interrupt handler and config info
   signal(SIGINT, closeServer);
   char ipAddress[IP_SIZE] = { 0 };
   getHostIp(ipAddress);
   int port = 0;
-
   if (pthread_mutex_init(&lock, NULL) != 0)
   {
     serverLog("ERROR", "Failed to Initialize mutex");
     return -1;
   }
-
-  printf("-> %s\n", ipAddress );
 
   // Handle arguments
   if(argc != 2)
@@ -45,11 +44,9 @@ int main(int argc, char const *argv[])
     }
   }
 
-
+  //= Create server socket
   int serverSocket = -1;
   struct sockaddr_in serverAddr;
-
-  //= Create socket
   if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
   {
     serverLog("ERROR", "Could not create server socket");
@@ -116,11 +113,11 @@ int main(int argc, char const *argv[])
     }
   }
 
-  // Grab master list
-  shList = (MasterList*)shmat (shmID, NULL, 0);       // Grabs the shared memory and
-  shList->msgQueueID = msgID;                         // Assign the message queue ID
+  // Grab master list and Initializes all elements
+  shList = (MasterList*)shmat (shmID, NULL, 0);
+  shList->msgQueueID = msgID;
   shList->numberOfClients = 0;
-  Client blankClient = {-1 , -1, { -1 }, { -1 }};         // Initialize clients to the same value
+  Client blankClient = { -1 , 0, { 0 }, { 0 } };
   for(int counter = 0; counter < MAX_CLIENTS; counter++)
   {
     shList->clients[counter] = blankClient;
@@ -134,19 +131,17 @@ int main(int argc, char const *argv[])
    return 3;
   }
 
-  //DEBUG: = Accept client
+  // Prepare new client info
   int clientSocket = -1;
   clientInfo cInfo = { -1, shList };
-
   struct sockaddr_in client;
   int clientLen = sizeof(client);
-  int numClient = 0;
 
   //= Iniciate broacasting thread
   pthread_create(&(shList->broadcastTid), NULL, broadcastMessages, (void *)shList);
   serverLog("INFO", "Server Started Listening & Sending");
 
-  // Accepts client connectionServer -> Spawns a thread for listenning for that client's message
+  // Main processing: Accept new clients and spawns thread for listening
   while(running)
   {
     if((clientSocket = accept(serverSocket, (struct sockaddr*)&client, &clientLen)) < 0)
@@ -156,6 +151,7 @@ int main(int argc, char const *argv[])
       return -7;
     }
 
+    // Rejects if the client is full
     if(shList->numberOfClients == MAX_CLIENTS)
     {
       write(clientSocket, EXIT_MSG, strlen(EXIT_MSG) + 1);
@@ -166,26 +162,33 @@ int main(int argc, char const *argv[])
     message firstMsg;
     memset(firstMsg.content, 0, MSG_SIZE);
     read(clientSocket, firstMsg.content, MSG_SIZE);
+    int index = addClient(shList, &firstMsg, clientSocket);
     fflush(stdout);
 
     // Spawn thread for listenning for clients messages
-
-    int index = addClient(shList, &firstMsg, clientSocket);
-    printf("It is still --> %d\n", index );
-
     cInfo.index = index;
-    printf("Did Cinfo lost it --> %d\n", cInfo.index );
     pthread_create(&(shList->clients[index]).tid, NULL, clientListenningThread, (void *)&cInfo);
     fflush(stdout);
   }
 
-  // DEBUG: If number of clients reach 10 does this get executed?
   return 0;
 }
 
+// FUNCTION      : closeServer
+// DESCRIPTION   : Interrupt handler for SIGNIT
+//                 Is activated when the number of clients reach 0
+//                 Peforms clean up of the resources
+//
+// PARAMETERS    :
+//	int signal_number  : Signal received (SIGINIT)
+//
+// RETURNS       :
+//	void
 void closeServer(int signal_number)
 {
   running = FALSE;
+
+  // Grab the shared memory section for clean up
   key_t shmKey = ftok(SHMKEY_PATH, SHM_KEYID);
   if(shmKey == -1)
   {
@@ -196,7 +199,13 @@ void closeServer(int signal_number)
   if(shmID != -1)
   {
     MasterList* list = (MasterList*)shmat(shmID, NULL, SHM_RDONLY);
+
+    // Warn all the clients the server is closed and join threads
     serverShutdownSignal(list);
+    for(int counter = 0; counter < list->numberOfClients; counter++)
+    {
+      pthread_join(list->broadcastTid, NULL);
+    }
     pthread_join(list->broadcastTid, NULL);
 
     // Clean resources

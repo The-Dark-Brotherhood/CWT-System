@@ -6,10 +6,18 @@
 *  DESCRIPTION   : Defines thread functions for communication purposes: Client
 *                  listenning function, and Broadcast function
 */
-// REFERENCE: The Hoochamacallit
 #include "../inc/chatServer.h"
 const int msgSize = sizeof(message) - sizeof(long);
 
+// FUNCTION      : clientListenningThread
+// DESCRIPTION   : (THREAD) Listen to a client socket and stores the message in
+//                queue
+//
+// PARAMETERS    :
+//	void* data  : (MasterList*) List of all the clients + index of the new client
+//
+// RETURNS       :
+//	void*
 void * clientListenningThread(void* data)
 {
   // Newly accepted client info
@@ -27,7 +35,7 @@ void * clientListenningThread(void* data)
   read(clientSocket, recMsg.content, MSG_SIZE);
 
   // If message contains exit message -> QUIT
-  while(TRUE)
+  while(running != FALSE)
   {
     if(strncmp((recMsg.content + OFFSET_MSG), EXIT_MSG, strlen(EXIT_MSG)) == 0)
     {
@@ -47,7 +55,14 @@ void * clientListenningThread(void* data)
   removeClient(shList, clientIndex);
 }
 
-
+// FUNCTION      : broadcastMessages
+// DESCRIPTION   : (THREAD) Broadcast messages in the queue to the connected clients
+//
+// PARAMETERS    :
+//	void* data  : (MasterList*) List of all the clients
+//
+// RETURNS       :
+//	void*
 void * broadcastMessages(void* data)
 {
   // Get client Master list
@@ -80,6 +95,15 @@ void * broadcastMessages(void* data)
   }
 }
 
+// FUNCTION      : serverShutdownSignal
+// DESCRIPTION   : Indicate to all clients via the EXIT_MSG that the server
+//                 is shutting down
+//
+// PARAMETERS    :
+//	MasterList* list  : Pointer to the shared memory master list
+//
+// RETURNS       :
+//	void*
 void serverShutdownSignal(MasterList* clientList)
 {
   for(int counter = 0; counter < clientList->numberOfClients; counter++)

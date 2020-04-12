@@ -13,19 +13,17 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
 #include <pthread.h>
-#include <sys/socket.h>
+#include <ifaddrs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-#include <ifaddrs.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 
@@ -39,7 +37,7 @@ extern pthread_mutex_t lock;
 #define PORT_SWITCH       "-port"
 #define PORT_SWITCH_SIZE  5
 
-#define MAX_CLIENTS     3
+#define MAX_CLIENTS     10
 #define SHMKEY_PATH     "."
 #define KEY_PATH        "/tmp/"
 #define SHM_KEYID       16535
@@ -47,7 +45,6 @@ extern pthread_mutex_t lock;
 #define OFFSET_MSG      27
 
 #define IP_SIZE         16
-#define CONT_SIZE       41  // DEBUG: Change later
 #define NAME_SIZE       6   // Ni
 #define TIME_SIZE       9   // ce
 #define MSG_SIZE        78

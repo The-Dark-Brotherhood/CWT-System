@@ -7,17 +7,17 @@
 *                  a shared memory section for storing all the sever's
 *                  clients information
 */
-
 #include "../inc/chatServer.h"
 
 // FUNCTION      : addClient
 // DESCRIPTION   : Add a client to the client master list
 //
 // PARAMETERS    :
-//	MasterList* list : Pointer to the shared memory master list
-//  message* firstMsg  : Pointer to the message received by the server.
-//                     Contains client info that is going to be stored
-//                     in the server
+//	MasterList* list  : Pointer to the shared memory master list
+//  message* firstMsg : Pointer to the message received by the server.
+//                      Contains client info that is going to be stored
+//                      in the server
+//  int socket        : Socket of the new client
 //
 // RETURNS       :
 //	void
@@ -26,17 +26,18 @@ int addClient(MasterList* list, message* firstMsg, int socket)
   pthread_mutex_lock(&lock);
   list->numberOfClients++;
 
+  // DEBUG:--------------------------//
   printf("Client Before Adding current Array:");
   for(int counter = 0; counter < MAX_CLIENTS; counter++ )
   {
       printf("| %d |", list->clients[counter].socket);
   }
   printf("\n");
+  //------------------------------//
 
   int index = findEmptyNode(list);
-  printf("Will be inserted at %d\n", index );
 
-  // Parse
+  // Parse client info from first message
   char clientAddr[IP_SIZE] = { 0 };
   char* foundIt = strchr(firstMsg->content, ' ');
   int ipSeparator = foundIt - firstMsg->content;
@@ -49,21 +50,30 @@ int addClient(MasterList* list, message* firstMsg, int socket)
   list->clients[index].socket = socket;
   strcpy(list->clients[index].address, clientAddr);
   strcpy(list->clients[index].name, username);
-
   serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
   serverLog("DEBUG", "CLIENT INFO: %s -- %s", list->clients[index].name, list->clients[index].address);
-  //printf("Client: %s -- %s -- %d \n", list->clients[index].address, list->clients[index].name, list->clients[index].socket );
 
+  // DEBUG:--------------------------//
   printf("Client AFTER Adding current Array:");
   for(int counter = 0; counter < MAX_CLIENTS; counter++ )
   {
       printf("| %d |", list->clients[counter].socket);
   }
   printf("\n");
+  //--------------------------------//
+
   pthread_mutex_unlock(&lock);
   return index;
 }
 
+// FUNCTION      : findEmptyNode
+// DESCRIPTION   : Find the next empty node in the client list
+//
+// PARAMETERS    :
+//	MasterList* list  : Pointer to the shared memory master list
+//
+// RETURNS       :
+//	void
 int findEmptyNode(MasterList* list)
 {
   int foundIndex = -1;
@@ -92,26 +102,30 @@ int findEmptyNode(MasterList* list)
 void removeClient(MasterList* list, int delIndex)
 {
   pthread_mutex_lock(&lock);
-  printf("What is the deal with delIndex? %d\n", delIndex );
+
+  // Close socket and clean client info
   close(list->clients[delIndex].tid);
-	// Delete client and join its thread
   list->clients[delIndex].socket = -1;
   list->clients[delIndex].tid = 0;
   list->numberOfClients--;
+
+  pthread_mutex_unlock(&lock);
   serverLog("INFO", "Client Removed - Number of Clients: %d", list->numberOfClients);
 
+  // DEBUG:------------//
   printf("Client After Removing current Array:");
   for(int counter = 0; counter < MAX_CLIENTS; counter++ )
   {
       printf("| %d |", list->clients[counter].socket);
   }
   printf("\n");
-  pthread_mutex_unlock(&lock);
-  // Check if server is empty
+  //------------------//
+
+  // Check if server is empty -> Terminate the server
   if(list->numberOfClients == 0)
   {
     serverLog("INFO", "No more clients -- CLOSING SERVER");
     running = FALSE;
-    kill(getpid(), SIGINT);   // Terminate server
+    kill(getpid(), SIGINT);
   }
 }
