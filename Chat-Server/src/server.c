@@ -147,8 +147,7 @@ int main(int argc, char const *argv[])
     if((clientSocket = accept(serverSocket, (struct sockaddr*)&client, &clientLen)) < 0)
     {
       serverLog("ERROR", "Unexpected: Failed to accept client - CLOSING");
-      // DEBUG: Put the signal to clean up the memory
-      return -7;
+      kill(getpid(), SIGINT);
     }
 
     // Rejects if the client is full

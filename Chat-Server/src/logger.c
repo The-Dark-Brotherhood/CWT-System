@@ -31,6 +31,13 @@ void getTime(char* output)
 }
 
 // Reference: https://stackoverflow.com/questions/25009116/c-wrapper-function-for-sprintf-s
+// FUNCTION      : serverLog
+// DESCRIPTION   : Sprintf wrapper for logging.
+//
+// PARAMETERS    : char* tag -> log tag
+//                 char* fmt -> Formated string
+//
+//  RETURNS      : void
 void serverLog (const char* tag, char* fmt, ...)
 {
   if(strlen(fmt) > LOG_LEN || strlen(tag) > TAG_LEN)
