@@ -42,7 +42,7 @@ int main(int argc, char const *argv[])
       printf("Not valid port\n");
     }
   }
-  
+
   gethostname(hostname, HOST_LEN);
   struct hostent* host;
   host = gethostbyname(hostname);
@@ -60,7 +60,7 @@ int main(int argc, char const *argv[])
   //= Set up server configuration
   memset(&serverAddr, 0, sizeof(serverAddr));
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_addr.s_addr = inet_addr(serverIP);      // DEBUG: Server config
+  serverAddr.sin_addr.s_addr = inet_addr(serverIP);
   serverAddr.sin_port = htons(port);
 
   //= Bind server config to Socket
@@ -161,7 +161,7 @@ int main(int argc, char const *argv[])
       continue;
     }
 
-    // Read new client info and add into the client list
+    // FIRST MESSAGE -> Contains client info (Name and IP Address)
     message firstMsg;
     memset(firstMsg.content, 0, MSG_SIZE);
     read(clientSocket, firstMsg.content, MSG_SIZE);

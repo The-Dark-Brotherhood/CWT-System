@@ -25,16 +25,6 @@ int addClient(MasterList* list, message* firstMsg, int socket)
 {
   pthread_mutex_lock(&lock);
   list->numberOfClients++;
-
-  // DEBUG:--------------------------//
-  printf("Client Before Adding current Array:");
-  for(int counter = 0; counter < MAX_CLIENTS; counter++ )
-  {
-      printf("| %d |", list->clients[counter].socket);
-  }
-  printf("\n");
-  //------------------------------//
-
   int index = findEmptyNode(list);
 
   // Parse client info from first message
@@ -52,15 +42,6 @@ int addClient(MasterList* list, message* firstMsg, int socket)
   strcpy(list->clients[index].name, username);
   serverLog("INFO", "Client Accepted - Number of Clients: %d", list->numberOfClients);
   serverLog("DEBUG", "CLIENT INFO: %s -- %s", list->clients[index].name, list->clients[index].address);
-
-  // DEBUG:--------------------------//
-  printf("Client AFTER Adding current Array:");
-  for(int counter = 0; counter < MAX_CLIENTS; counter++ )
-  {
-      printf("| %d |", list->clients[counter].socket);
-  }
-  printf("\n");
-  //--------------------------------//
 
   pthread_mutex_unlock(&lock);
   return index;
@@ -111,15 +92,6 @@ void removeClient(MasterList* list, int delIndex)
 
   pthread_mutex_unlock(&lock);
   serverLog("INFO", "Client Removed - Number of Clients: %d", list->numberOfClients);
-
-  // DEBUG:------------//
-  printf("Client After Removing current Array:");
-  for(int counter = 0; counter < MAX_CLIENTS; counter++ )
-  {
-      printf("| %d |", list->clients[counter].socket);
-  }
-  printf("\n");
-  //------------------//
 
   // Check if server is empty -> Terminate the server
   if(list->numberOfClients == 0)
