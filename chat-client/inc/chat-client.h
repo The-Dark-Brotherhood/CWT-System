@@ -71,7 +71,7 @@ void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, W
 void resizeWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, WINDOW *msgWinBackground);
 void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength);
 void getClientIP(char* clientIP);
-void format_time(char *output);
+void formatTime(char *output);
 void* sendMessage(void* arg);
 void sendFirstMsg(int server, char* user);
 void* receiveMsg(void* arg);
