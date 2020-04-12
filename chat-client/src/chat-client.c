@@ -3,17 +3,25 @@
 *  PROJECT       : Assignment #4 - Can We Talk?
 *  PROGRAMMER    : Gabriel Gurgel, Michael Gordon
 *  FIRST VERSION : 2020-03-27
-*  DESCRIPTION   :
+*  DESCRIPTION   : Processing of the main thread in the application.
+*                  The application takes 3 arguments: User Name, Server Name, Server Port.
+*                  The application verifies that each argument is valid before attempting
+*                  to connect with the server. A thread is spawned to received messages from
+*                  the server. A second thread is spawned to receive messages from the user.
+*                  The application closes when the user sends the exit message(>>bye<<) or if
+*                  there is no response from the server. An exit messages is displayed to the
+*                  user once the ncurses ui has been destroyed
 */
 
 #include "../inc/chat-client.h"
 
+//used by threads to read and set running status of client application
 int clientRunning = 1;
 
 int main(int argc, char *argv[])
 {
+  //to check if user entered right command
   int wrongUsage = 0;
-  unsigned short port = 0;
 
   if (argc != 4)
   {
@@ -32,13 +40,13 @@ int main(int argc, char *argv[])
     wrongUsage = 1;
   }
 
-
-
+  //was there wrong argument? Print usage statement to the user
   if(wrongUsage)
   {
     printf ("USAGE : chat-client -user<userID> -server<server name> -port<port>\n");
     return 1;
   }
+  //check that the user name is the correct length
   if(strlen(argv[1]+USER_FLAG_LENGTH) > NAME_SIZE || strlen(argv[1]+USER_FLAG_LENGTH) < 1)
   {
     printf("User name length must be 1-5 characters max\n");
@@ -52,15 +60,16 @@ int main(int argc, char *argv[])
   /*
    * determine host info for server name supplied
    */
-
-   struct hostent* host;
-
+  //Extract the name of the host, check if valid
+  struct hostent* host;
   if ((host = gethostbyname(argv[2]+SERVER_FLAG_LENGTH)) == NULL)
   {
     printf ("Failed to get host by name\n");
     return 3;
   }
 
+  //extract the port from the arguments
+  unsigned short port = 0;
   if ((!sscanf((argv[3]+PORT_FLAG_LENGTH), "%hu", &port))||strlen(argv[3]) == PORT_FLAG_LENGTH)
   {
     printf("Invalid port value\n");
@@ -82,7 +91,6 @@ int main(int argc, char *argv[])
   server_address.sin_addr.s_addr = inet_addr(ServerIP);
   server_address.sin_port = htons(port);
 
-
   //Connect to Server
   int err = connect(sockfd, (struct sockaddr *)&server_address, sizeof(server_address));
   if (err == -1)
@@ -90,7 +98,7 @@ int main(int argc, char *argv[])
     printf("Error: unable to connect to the Chat Server\n");
     return -1;
   }
-  // Send the message with client info
+  // Send the initial message with client info
   sendFirstMsg(sockfd, userID);
 
   //Create the ncurses windows.
@@ -170,6 +178,7 @@ int main(int argc, char *argv[])
     printf("Error creating the send messages thread\n");
     return EXIT_FAILURE;
   }
+
   //wait for msg thread to end before exiting
   pthread_join(send_msg_thread, NULL);
 
@@ -183,6 +192,7 @@ int main(int argc, char *argv[])
   delwin(txtBoxWin);
   endwin();
 
+  //check the exit status and write to screen once the ncurses has closed
   switch(args.exitStatus)
   {
     case NO_SERVER_RESPONSE:

@@ -1,6 +1,26 @@
+/*
+*  FILE          : ui.c
+*  PROJECT       : Assignment #4 - Can We Talk?
+*  PROGRAMMER    : Gabriel Gurgel, Michael Gordon
+*  FIRST VERSION : 2020-03-27
+*  DESCRIPTION   : The functions in this file are used to improve the UI
+*                  of the client application. The application responds well 
+*                  to window resizing due to using ratios when setting positions and
+*                  sizes of the windows
+*/
+
 #include "../inc/chat-client.h"
 
-//Source: Sean Clarke
+
+// FUNCTION      : blankWin
+// DESCRIPTION   : This function is used to clear the window screen
+//                  Source: Sean Clarke example code
+// PARAMETERS    :
+//  WINDOW* win -> the window to clear
+//
+// RETURNS       :
+//	void
+//
 void blankWin(WINDOW *win)
 {
   int i;
@@ -21,12 +41,25 @@ void blankWin(WINDOW *win)
   wrefresh(win);
 }
 
+// FUNCTION      : setUpWindows
+// DESCRIPTION   : This function is used to setup the windows. The colors,
+//                boxes, text of the windows is set up in this function
+// PARAMETERS    :
+//  WINDOW *txtBoxWin         -> the "textbox" window
+//  WINDOW *txtBoxBackground  -> background window where user can enter text
+//  WINDOW *msgWin            -> the window containing messages
+//  WINDOW *msgWinBackground  -> the background window of messages window
+//
+// RETURNS       :
+//	void
+//
 void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, WINDOW *msgWinBackground)
 {
   int x,y;
   getmaxyx(stdscr,y,x);
 
   start_color();
+
   //Set up the colors to use with ncurses
   init_pair(1,COLOR_WHITE,COLOR_BLACK);
   init_pair(2,COLOR_GREEN,COLOR_BLUE);
@@ -43,13 +76,12 @@ void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, W
   bkgd(COLOR_PAIR(3));
   refresh();
 
-
   //Set the background color,text, and box for the messages background window
   wbkgd(msgWinBackground, COLOR_PAIR(3));
-
-  mvwprintw(msgWinBackground, 1, (x/2 - 8), "INCOMING MESSAGES", INPUT_MAX);
+  mvwprintw(msgWinBackground, 1, (x/2 - 8), "INCOMING MESSAGES", INPUT_MAX);  //centre the text with x/2 - 8
   box(msgWinBackground, 0, 0);
   wrefresh(msgWinBackground);
+
   //set the background color for the received messages window
   wbkgd(msgWin, COLOR_PAIR(3));
   wrefresh(msgWin);
@@ -57,7 +89,7 @@ void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, W
   //set the background color, box, and text for the textbox background window
   wbkgd(txtBoxBackground, COLOR_PAIR(2));
   box(txtBoxBackground, 0, 0);
-  mvwprintw(txtBoxBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", INPUT_MAX);
+  mvwprintw(txtBoxBackground, 1, (x/2 - 8), "OUTGOING MESSAGE", INPUT_MAX); //centre the text with x/2 - 8
   wrefresh(txtBoxBackground);
 
   //set the background for the text box window
@@ -65,9 +97,21 @@ void setUpWindows(WINDOW *txtBoxWin, WINDOW *txtBoxBackground, WINDOW *msgWin, W
   keypad(txtBoxWin, 1);
   wrefresh(txtBoxWin);
 
-
 }
 
+// FUNCTION      : resizeWindows
+// DESCRIPTION   : This function is used to resize the window screens. The
+//                  dimenstions are established using % to ensure responsivness
+//
+// PARAMETERS    :
+//  WINDOW *win                 -> the "textbox" window
+//  WINDOW *winBg               -> background window where user can enter text
+//  WINDOW *msgWindow            -> the window containing messages
+//  WINDOW *msgWindowBackground  -> the background window of messages window
+//
+// RETURNS       :
+//	void
+//
 void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWindowBackground)
 {
   blankWin(win);
@@ -104,6 +148,18 @@ void resizeWindows(WINDOW *win, WINDOW *winBg, WINDOW *msgWindow, WINDOW *msgWin
 
 }
 
+// FUNCTION      : placeCursor
+// DESCRIPTION   : This function is used to place the cursor at the proper location
+//                  in the text box. This is primarily used when the user resizes the screen
+// PARAMETERS    :
+//  int* cursorX      -> where to store the x value of cursor location
+//  int* cursorY      -> where to store the y value of cursor location
+//  WINDOW* txtBoxWin -> the textbox window
+//  int stringLength  -> length of the input string currently in the textbox
+//
+// RETURNS       :
+//	void
+//
 void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength)
 {
   int x,y;
@@ -113,11 +169,23 @@ void placeCursor(int* cursorX, int* cursorY, WINDOW* txtBoxWin, int stringLength
   *cursorX = (stringLength%x);
 }
 
+
+// FUNCTION      : checkIfNeedNewLine
+// DESCRIPTION   : This function is used to improve the ui experience of the users
+//                 If the width of the window is too long or short, a new line
+//                 character should be inserted to improve readabilitiy
+// PARAMETERS    :
+//  WINDOW* incomingWindow -> the messages window
+//
+// RETURNS       :
+//	void
+//
 int checkIfNeedNewLine(WINDOW* incomingWindow)
 {
   int windowX = 0;
   int windowY = 0;
   getmaxyx(incomingWindow, windowY, windowX);
+
   if(windowX != MESSAGE_SIZE-1)
   {
     return 1;
